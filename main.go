@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -43,27 +42,6 @@ func setupPlugins(externalPluginsPath string) error {
 	}
 
 	return nil
-}
-
-func createTempRepo(ctx context.Context) (string, error) {
-	repoPath, err := ioutil.TempDir("", "ipfs-shell")
-	if err != nil {
-		return "", fmt.Errorf("failed to get temp dir: %s", err)
-	}
-
-	// Create a config with default options and a 2048 bit key
-	cfg, err := config.Init(ioutil.Discard, 2048)
-	if err != nil {
-		return "", err
-	}
-
-	// Create the repo with the config
-	err = fsrepo.Init(repoPath, cfg)
-	if err != nil {
-		return "", fmt.Errorf("failed to init ephemeral node: %s", err)
-	}
-
-	return repoPath, nil
 }
 
 /// ------ Spawning the node
@@ -142,26 +120,6 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) err
 	}
 	wg.Wait()
 	return nil
-}
-
-func getUnixfsFile(path string) (files.File, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	st, err := file.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := files.NewReaderPathFile(path, file, st)
-	if err != nil {
-		return nil, err
-	}
-
-	return f, nil
 }
 
 func getUnixfsNode(path string) (files.Node, error) {
