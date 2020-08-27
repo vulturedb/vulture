@@ -3,24 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
 	"path/filepath"
-	"sync"
 
+	cid "github.com/ipfs/go-cid"
 	config "github.com/ipfs/go-ipfs-config"
-	files "github.com/ipfs/go-ipfs-files"
 	libp2p "github.com/ipfs/go-ipfs/core/node/libp2p"
+	cbor "github.com/ipfs/go-ipld-cbor"
 	icore "github.com/ipfs/interface-go-ipfs-core"
-	icorepath "github.com/ipfs/interface-go-ipfs-core/path"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
-	ma "github.com/multiformats/go-multiaddr"
+	path "github.com/ipfs/interface-go-ipfs-core/path"
+	mh "github.com/multiformats/go-multihash"
 
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coreapi"
-	"github.com/ipfs/go-ipfs/plugin/loader" // This package is needed so that all the preloaded plugins are loaded automatically
+
+	// This package is needed so that all the preloaded plugins are loaded automatically
+	"github.com/ipfs/go-ipfs/plugin/loader"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
-	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 /// ------ Setting up the IPFS Repo
@@ -57,9 +55,11 @@ func createNode(ctx context.Context, repoPath string) (icore.CoreAPI, error) {
 	// Construct the node
 
 	nodeOptions := &core.BuildCfg{
-		Online:  true,
-		Routing: libp2p.DHTOption, // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
-		// Routing: libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
+		Online: true,
+		// This option sets the node to be a full DHT node (both fetching and storing DHT Records)
+		Routing: libp2p.DHTOption,
+		// This option sets the node to be a client DHT node (only fetching records)
+		// Routing: libp2p.DHTClientOption,
 		Repo: repo,
 	}
 
@@ -88,116 +88,81 @@ func spawnDefault(ctx context.Context) (icore.CoreAPI, error) {
 	return createNode(ctx, defaultPath)
 }
 
-func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) error {
-	var wg sync.WaitGroup
-	peerInfos := make(map[peer.ID]*peerstore.PeerInfo, len(peers))
-	for _, addrStr := range peers {
-		addr, err := ma.NewMultiaddr(addrStr)
-		if err != nil {
-			return err
-		}
-		pii, err := peerstore.InfoFromP2pAddr(addr)
-		if err != nil {
-			return err
-		}
-		pi, ok := peerInfos[pii.ID]
-		if !ok {
-			pi = &peerstore.PeerInfo{ID: pii.ID}
-			peerInfos[pi.ID] = pi
-		}
-		pi.Addrs = append(pi.Addrs, pii.Addrs...)
-	}
-
-	wg.Add(len(peerInfos))
-	for _, peerInfo := range peerInfos {
-		go func(peerInfo *peerstore.PeerInfo) {
-			defer wg.Done()
-			err := ipfs.Swarm().Connect(ctx, *peerInfo)
-			if err != nil {
-				log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
-			}
-		}(peerInfo)
-	}
-	wg.Wait()
-	return nil
+type MyStruct struct {
+	Items map[string]MyStruct
+	Foo   string
+	Bar   []byte
+	Baz   []int
 }
 
-func getUnixfsNode(path string) (files.Node, error) {
-	st, err := os.Stat(path)
-	if err != nil {
-		return nil, err
+func testStruct() MyStruct {
+	return MyStruct{
+		Items: map[string]MyStruct{
+			"Foo": {
+				Foo: "Foo",
+				Bar: []byte("Bar"),
+				Baz: []int{1, 2, 3, 4},
+			},
+			"Bar": {
+				Bar: []byte("Bar"),
+				Baz: []int{1, 2, 3, 4},
+			},
+		},
+		Baz: []int{5, 1, 2},
 	}
-
-	f, err := files.NewSerialFile(path, false, st)
-	if err != nil {
-		return nil, err
-	}
-
-	return f, nil
 }
-
-/// -------
 
 func main() {
-	/// --- Part I: Getting a IPFS node running
-
-	fmt.Println("-- Getting an IPFS node running -- ")
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Spawn a node using the default path (~/.ipfs), assuming that a repo exists there already
-	fmt.Println("Spawning node on default repo")
 	ipfs, err := spawnDefault(ctx)
 	if err != nil {
 		fmt.Println("No IPFS repo available on the default path")
 	}
-
 	fmt.Println("IPFS node is running")
-
-	/// --- Part II: Adding a file and a directory to IPFS
-
-	fmt.Println("\n-- Adding and getting back files & directories --")
-
-	/// --- Part III: Getting the file and directory you added back
-
-	/// --- Part IV: Getting a file from the IPFS Network
-
-	fmt.Println("\n-- Going to connect to a few nodes in the Network as bootstrappers --")
-
-	bootstrapNodes := []string{
-		// IPFS Bootstrapper nodes.
-		"/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-		"/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
-		"/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-		"/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-
-		// IPFS Cluster Pinning nodes
-		"/ip4/138.201.67.219/tcp/4001/p2p/QmUd6zHcbkbcs7SMxwLs48qZVX3vpcM8errYS7xEczwRMA",
-		"/ip4/138.201.67.219/udp/4001/quic/p2p/QmUd6zHcbkbcs7SMxwLs48qZVX3vpcM8errYS7xEczwRMA",
-		"/ip4/138.201.67.220/tcp/4001/p2p/QmNSYxZAiJHeLdkBg38roksAR9So7Y5eojks1yjEcUtZ7i",
-		"/ip4/138.201.67.220/udp/4001/quic/p2p/QmNSYxZAiJHeLdkBg38roksAR9So7Y5eojks1yjEcUtZ7i",
-		"/ip4/138.201.68.74/tcp/4001/p2p/QmdnXwLrC8p1ueiq2Qya8joNvk3TVVDAut7PrikmZwubtR",
-		"/ip4/138.201.68.74/udp/4001/quic/p2p/QmdnXwLrC8p1ueiq2Qya8joNvk3TVVDAut7PrikmZwubtR",
-		"/ip4/94.130.135.167/tcp/4001/p2p/QmUEMvxS2e7iDrereVYc5SWPauXPyNwxcy9BXZrC1QTcHE",
-		"/ip4/94.130.135.167/udp/4001/quic/p2p/QmUEMvxS2e7iDrereVYc5SWPauXPyNwxcy9BXZrC1QTcHE",
-
-		// You can add more nodes here, for example, another IPFS node you might have running locally, mine was:
-		// "/ip4/127.0.0.1/tcp/4010/p2p/QmZp2fhDLxjYue2RiUvLwT9MWdnbDxam32qYFnGmxZDh5L",
-		// "/ip4/127.0.0.1/udp/4010/quic/p2p/QmZp2fhDLxjYue2RiUvLwT9MWdnbDxam32qYFnGmxZDh5L",
-	}
-
-	go connectToPeers(ctx, ipfs, bootstrapNodes)
 
 	exampleCIDStr := "QmUaoioqU7bxezBQZkUcgcSyokatMY71sxsALxQmRRrHrj"
 
 	fmt.Printf("Fetching a file from the network with CID %s\n", exampleCIDStr)
-	testCID := icorepath.New(exampleCIDStr)
+	testCIDPath := path.New(exampleCIDStr)
 
-	_, err = ipfs.Unixfs().Get(ctx, testCID)
+	cont, err := ipfs.Unixfs().Get(ctx, testCIDPath)
 	if err != nil {
 		panic(fmt.Errorf("Could not get file with CID: %s", err))
 	}
+	s, err := cont.Size()
+	if err != nil {
+		panic(fmt.Errorf("Could not get size: %s", err))
+	}
+	fmt.Printf("Size of file: %d\n", s)
 
-	fmt.Println("\nAll done! You just finalized your first tutorial on how to use go-ipfs as a library")
+	testCID, err := cid.Decode(exampleCIDStr)
+	if err != nil {
+		panic(fmt.Errorf("Could not decode cid(%s): %s", testCID, err))
+	}
+
+	cbor.RegisterCborType(MyStruct{})
+	nd, err := cbor.WrapObject(testStruct(), mh.SHA2_256, -1)
+	if err != nil {
+		panic(fmt.Errorf("Could not wrap object: %s", err))
+	}
+
+	dagService := ipfs.Dag()
+	err = dagService.Add(ctx, nd)
+	if err != nil {
+		panic(fmt.Errorf("Could not add node to dag: %s", err))
+	}
+
+	fmt.Printf("Added node %s\n", nd.Cid().String())
+
+	nd2, err := dagService.Get(ctx, nd.Cid())
+	if err != nil {
+		panic(fmt.Errorf("Could not get node from dag: %s", err))
+	}
+
+	fmt.Printf("Got node %s:\n", nd2.Cid().String())
+	for _, ln := range nd2.Tree("", -1) {
+		fmt.Println(ln)
+	}
 }
