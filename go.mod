@@ -4,12 +4,12 @@ go 1.14
 
 require (
 	github.com/ipfs/go-cid v0.0.6
-	github.com/ipfs/go-ipfs v0.6.0 // indirect
-  github.com/ipfs/go-ipfs-config v0.8.0
-  github.com/ipfs/go-ipld-cbor v0.0.4
-  github.com/ipfs/go-ipld-format v0.2.0
-  github.com/ipfs/interface-go-ipfs-core v0.3.0
-  github.com/multiformats/go-multihash v0.0.13
+	github.com/ipfs/go-ipfs v0.6.0
+	github.com/ipfs/go-ipfs-config v0.8.0
+	github.com/ipfs/go-ipld-cbor v0.0.4
+	github.com/ipfs/go-ipld-format v0.2.0
+	github.com/ipfs/interface-go-ipfs-core v0.3.0
+	github.com/multiformats/go-multihash v0.0.13
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c // indirect
 	github.com/opentracing/basictracer-go v1.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
