@@ -1,4 +1,4 @@
-package schema
+package core
 
 type Type interface {
 	Name() string
@@ -48,4 +48,16 @@ type Field struct {
 
 type Schema struct {
 	Fields []Field
+}
+
+func GenesisSchema() Schema {
+	return Schema{Fields: []Field{}}
+}
+
+func (s Schema) WithAddedField(f Field) Schema {
+	numFields := len(s.Fields)
+	fields := make([]Field, numFields+1)
+	_ = copy(fields, s.Fields)
+	fields[numFields] = f
+	return Schema{Fields: fields}
 }
