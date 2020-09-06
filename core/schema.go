@@ -1,63 +1,14 @@
 package core
 
-type Type interface {
-	Name() string
-}
-
-type StringType struct{}
-
-func (t StringType) Name() string {
-	return "string"
-}
-
-type IntegerType struct{}
-
-func (t IntegerType) Name() string {
-	return "int"
-}
-
-type LongType struct{}
-
-func (t LongType) Name() string {
-	return "long"
-}
-
-type FloatType struct{}
-
-func (t FloatType) Name() string {
-	return "float"
-}
-
-type DoubleType struct{}
-
-func (t DoubleType) Name() string {
-	return "double"
-}
-
-type BooleanType struct{}
-
-func (t BooleanType) Name() string {
-	return "bool"
-}
-
-type Field struct {
-	Type     Type
-	Name     string
-	Nullable bool
+type FieldSpec struct {
+	Type     string `mapstructure:"type"`
+	Nullable bool   `mapstructure:"nullable"`
 }
 
 type Schema struct {
-	Fields []Field
+	Fields map[string]FieldSpec `mapstructure:"fields"`
 }
 
 func GenesisSchema() Schema {
-	return Schema{Fields: []Field{}}
-}
-
-func (s Schema) WithAddedField(f Field) Schema {
-	numFields := len(s.Fields)
-	fields := make([]Field, numFields+1)
-	_ = copy(fields, s.Fields)
-	fields[numFields] = f
-	return Schema{Fields: fields}
+	return Schema{Fields: map[string]FieldSpec{}}
 }
