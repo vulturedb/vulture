@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -54,7 +53,7 @@ func GetSchema(c context.Context, a ipld.NodeGetter, cid cid.Cid) (core.Schema, 
 	}
 	s := &core.Schema{}
 	if err = unmarshal(s, raw); err != nil {
-		panic(fmt.Errorf("Couldn't unmarshal: %s", err))
+		return core.GenesisSchema(), err
 	}
 	return *s, nil
 }
