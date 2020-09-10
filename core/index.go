@@ -27,6 +27,9 @@ type bTreeNode struct {
 }
 
 func NewBTreeIndex(t uint) *BTreeIndex {
+	if t == 0 {
+		panic("t must be not equal 0")
+	}
 	return &BTreeIndex{nil, t}
 }
 
@@ -129,7 +132,7 @@ func (n *bTreeNode) put(e IndexElem, t uint) (*bTreeSplitResult, bool) {
 		}
 	}
 
-	if uint(len(n.elems)) == 2*t-1 {
+	if uint(len(n.elems)) == 2*t {
 		// make sure that the node that was in the middle is the one promoted up
 		var bias bTreeSplitBias
 		if i < t {
@@ -142,10 +145,10 @@ func (n *bTreeNode) put(e IndexElem, t uint) (*bTreeSplitResult, bool) {
 	return nil, added
 }
 
-func (n *bTreeNode) traverse(depth uint, f func(IndexElem, uint)) {
+func (n *bTreeNode) traverseInOrder(depth uint, f func(IndexElem, uint)) {
 	for i := 0; i < len(n.elems)+1; i++ {
 		if n.children != nil {
-			n.children[i].traverse(depth+1, f)
+			n.children[i].traverseInOrder(depth+1, f)
 		}
 		if i < len(n.elems) {
 			f(n.elems[i], depth)
@@ -180,12 +183,15 @@ func (i *BTreeIndex) Delete(e IndexElem) {
 	// TODO: Implement
 }
 
-func (i *BTreeIndex) PrintInOrder() {
+func (i *BTreeIndex) TraverseInOrder(f func(IndexElem, uint)) {
 	if i.root == nil {
-		fmt.Println("nil")
 		return
 	}
-	i.root.traverse(uint(0), func(e IndexElem, depth uint) {
+	i.root.traverseInOrder(uint(0), f)
+}
+
+func (i *BTreeIndex) PrintInOrder() {
+	i.TraverseInOrder(func(e IndexElem, depth uint) {
 		fmt.Printf("%s%v\n", strings.Repeat("\t", int(depth)), e)
 	})
 }

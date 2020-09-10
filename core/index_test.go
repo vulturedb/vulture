@@ -56,7 +56,7 @@ func TestBTreeGetNilRoot(t *testing.T) {
 
 func TestBTreePutAndGetIter(t *testing.T) {
 	rand.Seed(42)
-	iters := 10
+	iters := 50
 	elems := 1000
 	mod := 100
 	for i := 0; i < iters; i++ {
