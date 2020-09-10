@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,4 +52,26 @@ func TestBTreeGet(t *testing.T) {
 
 func TestBTreeGetNilRoot(t *testing.T) {
 	assert.Nil(t, NewBTreeIndex(2).Get(Int(1)))
+}
+
+func TestBTreePutAndGetIter(t *testing.T) {
+	rand.Seed(42)
+	iters := 10
+	elems := 1000
+	mod := 100
+	for i := 0; i < iters; i++ {
+		index := NewBTreeIndex(uint(3))
+		collected := map[int]interface{}{}
+		for j := 0; j < elems; j++ {
+			elem := rand.Int() % mod
+			_, exists := collected[elem]
+			added := index.Put(Int(elem))
+			assert.Equal(t, exists, !added)
+			collected[elem] = nil
+		}
+
+		for elem := range collected {
+			assert.Equal(t, Int(elem), index.Get(Int(elem)))
+		}
+	}
 }
