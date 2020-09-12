@@ -99,6 +99,9 @@ func bTreeExample() {
 	elapsed := t.Sub(start)
 	fmt.Printf("Ran in %s\n", elapsed)
 	index.PrintInOrder()
+	index.Remove(Float(99.0))
+	fmt.Printf("Removed\n")
+	index.PrintInOrder()
 }
 
 func main() {

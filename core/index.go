@@ -13,7 +13,7 @@ type IndexElem interface {
 type Index interface {
 	Get(IndexElem) IndexElem
 	Put(IndexElem) bool
-	Delete(IndexElem) bool
+	Remove(IndexElem) bool
 }
 
 type BTreeIndex struct {
@@ -74,6 +74,14 @@ const (
 	bTreeRightBias = bTreeSplitBias(0)
 )
 
+type bTreeRemoveResult int
+
+const (
+	bTreeRemoveMissing = bTreeRemoveResult(0)
+	bTreeRemoveSuccess = bTreeRemoveResult(1)
+	bTreeRemoveRotate  = bTreeRemoveResult(2)
+)
+
 func (n *bTreeNode) split(t uint, bias bTreeSplitBias) *bTreeSplitResult {
 	var lChildren, rChildren []*bTreeNode
 	if n.children == nil {
@@ -113,6 +121,13 @@ func (n *bTreeNode) insertChildrenAt(lNode *bTreeNode, rNode *bTreeNode, i uint)
 	n.children = newChildren
 }
 
+func (n *bTreeNode) removeElemAt(i uint) {
+	newElems := make([]IndexElem, len(n.elems)-1)
+	copy(newElems[:i], n.elems[:i])
+	copy(newElems[i:], n.elems[i+1:])
+	n.elems = newElems
+}
+
 func (n *bTreeNode) put(e IndexElem, t uint) (*bTreeSplitResult, bool) {
 	i := n.find(e)
 	if i > 0 && indexElemsEqual(n.elems[i-1], e) {
@@ -143,6 +158,40 @@ func (n *bTreeNode) put(e IndexElem, t uint) (*bTreeSplitResult, bool) {
 		return n.split(t, bias), added
 	}
 	return nil, added
+}
+
+func (n *bTreeNode) remove(e IndexElem, t uint) bTreeRemoveResult {
+	i := n.find(e)
+	nKeys := uint(len(n.elems))
+	if i > 0 && indexElemsEqual(n.elems[i-1], e) {
+		if n.children == nil {
+			// leaf node
+			n.removeElemAt(i - 1)
+			if nKeys >= t {
+				return bTreeRemoveSuccess
+			} else {
+				return bTreeRemoveRotate
+			}
+		} else {
+			// branch node
+		}
+	}
+	if n.children == nil {
+		// leaf node and we didn't find the value
+		return bTreeRemoveMissing
+	}
+	res := n.children[i].remove(e, t)
+	if res == bTreeRemoveRotate {
+		if i == nKeys {
+			// borrow left
+		} else {
+			// borrow right
+
+		}
+		// rotate
+		return bTreeRemoveSuccess
+	}
+	return res
 }
 
 func (n *bTreeNode) traverseInOrder(depth uint, f func(IndexElem, uint)) {
@@ -179,8 +228,11 @@ func (i *BTreeIndex) Put(e IndexElem) bool {
 	return added
 }
 
-func (i *BTreeIndex) Delete(e IndexElem) {
-	// TODO: Implement
+func (i *BTreeIndex) Remove(e IndexElem) bool {
+	if i.root == nil {
+		return false
+	}
+	return i.root.remove(e, i.t) != bTreeRemoveMissing
 }
 
 func (i *BTreeIndex) TraverseInOrder(f func(IndexElem, uint)) {
