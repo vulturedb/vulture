@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 )
 
 type merkleSearchChild struct {
@@ -159,6 +160,10 @@ func (t *MerkleSearchTree) split(nodeHash []byte, key Key) ([]byte, []byte) {
 	child, i := n.findChild(key)
 	if i > 0 && keysEqual(key, n.children[i-1].key) {
 		panic(fmt.Errorf("Trying to get split node but key matches. Key: %v, Level: %d", key, n.level))
+	} else if i == 0 && n.low == nil {
+		return nil, nodeHash
+	} else if i == uint(len(n.children)) && n.children[len(n.children)-1].node == nil {
+		return nodeHash, nil
 	}
 	t.store.Remove(nodeHash)
 	lChildren := make([]merkleSearchChild, i)
@@ -222,7 +227,21 @@ func (t *MerkleSearchTree) leadingZeros(key Key) uint32 {
 }
 
 func (t *MerkleSearchTree) Put(key Key, val Value) {
-	t.root = t.put(t.root, key, val, t.leadingZeros(key))
+	atLevel := t.leadingZeros(key)
+	fmt.Printf("Putting %v -> %v at %d\n", key, val, atLevel)
+	t.root = t.put(t.root, key, val, atLevel)
+}
+
+func (t *MerkleSearchTree) printInOrder(nodeHash []byte, height uint32) {
+	if nodeHash == nil {
+		return
+	}
+	n := t.store.Get(nodeHash).(*merkleSearchNode)
+	t.printInOrder(n.low, height)
+	for _, child := range n.children {
+		fmt.Printf("%s%v -> %v\n", strings.Repeat("\t", int(height-n.level)), child.key, child.value)
+		t.printInOrder(child.node, height)
+	}
 }
 
 func (t *MerkleSearchTree) get(nodeHash []byte, key Key) Value {
@@ -245,6 +264,13 @@ func (t *MerkleSearchTree) get(nodeHash []byte, key Key) Value {
 
 func (t *MerkleSearchTree) Get(key Key) Value {
 	return t.get(t.root, key)
+}
+
+func (t *MerkleSearchTree) PrintInOrder() {
+	if t.root != nil {
+		height := t.store.Get(t.root).(*merkleSearchNode).level
+		t.printInOrder(t.root, height)
+	}
 }
 
 func (t *MerkleSearchTree) RootHash() []byte {
