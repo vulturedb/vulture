@@ -100,6 +100,14 @@ func (f Float) PutBytes(w io.Writer) error {
 	return err
 }
 
+func (f Float) Merge(with index.Value) index.Value {
+	if f > with.(Float) {
+		return f
+	} else {
+		return with
+	}
+}
+
 func mstExample() {
 	ind := index.NewLocalMST(index.Base16, crypto.SHA256)
 	ind.Put(Float(420.0), Float(71.0))

@@ -7,6 +7,7 @@ type Key interface {
 
 type Value interface {
 	Hashable
+	Merge(with Value) Value
 }
 
 type Index interface {
