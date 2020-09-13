@@ -34,7 +34,7 @@ func (f UInt32) Merge(with Value) Value {
 func TestMSTPutAndGetIter(t *testing.T) {
 	rand.Seed(42)
 	iters := 50
-	elems := 1000
+	elems := 10000
 	keyMod := uint32(100)
 	for i := 0; i < iters; i++ {
 		index := NewLocalMST(Base16, crypto.SHA256)
