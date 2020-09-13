@@ -72,6 +72,29 @@ func (n *merkleSearchNode) find(key Key) uint {
 	return uint(i)
 }
 
+func (n *merkleSearchNode) findChild(key Key) ([]byte, uint) {
+	i := n.find(key)
+	if i > 0 && keysEqual(key, n.children[i-1].key) {
+		panic(fmt.Errorf("Trying to get childHash but key matches. Key: %v, Level: %d", key, n.level))
+	}
+	if i == 0 {
+		return n.low, i
+	} else {
+		return n.children[i-1].node, i
+	}
+}
+
+func (n *merkleSearchNode) withHashAt(hash []byte, at uint) *merkleSearchNode {
+	newChildren := make([]merkleSearchChild, len(n.children))
+	copy(newChildren, n.children)
+	newChildren[at].node = hash
+	return &merkleSearchNode{
+		level:    n.level,
+		low:      n.low,
+		children: newChildren,
+	}
+}
+
 type MerkleSearchTree struct {
 	root  []byte
 	base  Base
@@ -89,17 +112,27 @@ func NewLocalMST(base Base, hash crypto.Hash) *MerkleSearchTree {
 }
 
 func (t *MerkleSearchTree) put(nodeHash []byte, key Key, val Value, atLevel uint32) []byte {
-	var n *merkleSearchNode = nil
+	var newNode *merkleSearchNode = nil
 	if nodeHash == nil {
-		n = &merkleSearchNode{
+		newNode = &merkleSearchNode{
 			level:    atLevel,
 			low:      nil,
 			children: []merkleSearchChild{{key, val, nil}},
 		}
 	} else {
-		// TODO: Fill in
+		n := t.store.Get(nodeHash).(*merkleSearchNode)
+		t.store.Remove(nodeHash)
+		if atLevel < n.level {
+			childHash, i := n.findChild(key)
+			childHash = t.put(childHash, key, val, atLevel)
+			newNode = n.withHashAt(childHash, i)
+		} else if atLevel == n.level {
+			// TODO: Fill in
+		} else {
+			// TODO: Fill in
+		}
 	}
-	return t.store.Put(n)
+	return t.store.Put(newNode)
 }
 
 func (t *MerkleSearchTree) leadingZeros(key Key) uint32 {
@@ -130,4 +163,8 @@ func (t *MerkleSearchTree) get(nodeHash []byte, key Key) Value {
 
 func (t *MerkleSearchTree) Get(key Key) Value {
 	return t.get(t.root, key)
+}
+
+func (t *MerkleSearchTree) RootHash() []byte {
+	return t.root
 }

@@ -12,6 +12,7 @@ type Value interface {
 type Index interface {
 	Put(Key, Value)
 	Get(Key) Value
+	RootHash() []byte
 }
 
 func keysEqual(k1 Key, k2 Key) bool {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"time"
@@ -101,13 +102,15 @@ func (f Float) PutBytes(w io.Writer) error {
 
 func mstExample() {
 	ind := index.NewLocalMST(index.Base16, crypto.SHA256)
-	ind.Put(Float(420.0), Float(69.0))
+	ind.Put(Float(420.0), Float(71.0))
 	val := ind.Get(Float(420.0))
 	fmt.Printf("%d\n", val)
 	val = ind.Get(Float(123.0))
 	fmt.Printf("%v\n", val)
 	val = ind.Get(Float(1230.0))
 	fmt.Printf("%v\n", val)
+	rootHash := hex.EncodeToString(ind.RootHash())
+	fmt.Printf("%s\n", rootHash)
 }
 
 func main() {
