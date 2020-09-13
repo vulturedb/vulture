@@ -110,13 +110,13 @@ func (f Float) Merge(with index.Value) index.Value {
 
 func mstExample() {
 	ind := index.NewLocalMST(index.Base16, crypto.SHA256)
-	ind.Put(Float(420.0), Float(71.0))
-	val := ind.Get(Float(420.0))
-	fmt.Printf("%d\n", val)
-	val = ind.Get(Float(123.0))
-	fmt.Printf("%v\n", val)
-	val = ind.Get(Float(1230.0))
-	fmt.Printf("%v\n", val)
+	for i := 0.0; i < 100.0; i += 1.0 {
+		ind.Put(Float(i), Float(i))
+	}
+	for i := 0.0; i < 100.0; i += 1.0 {
+		val := ind.Get(Float(i))
+		fmt.Printf("%t %d\n", val == Float(i), val)
+	}
 	rootHash := hex.EncodeToString(ind.RootHash())
 	fmt.Printf("%s\n", rootHash)
 }

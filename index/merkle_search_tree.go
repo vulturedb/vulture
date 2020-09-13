@@ -190,12 +190,13 @@ func (t *MerkleSearchTree) put(nodeHash []byte, key Key, val Value, atLevel uint
 		}
 	} else {
 		n := t.store.Get(nodeHash).(*merkleSearchNode)
-		t.store.Remove(nodeHash)
 		if atLevel < n.level {
+			t.store.Remove(nodeHash)
 			childHash, i := n.findChild(key)
 			childHash = t.put(childHash, key, val, atLevel)
 			newNode = n.withHashAt(childHash, i)
 		} else if atLevel == n.level {
+			t.store.Remove(nodeHash)
 			i := n.find(key)
 			if i > 0 && keysEqual(key, n.children[i-1].key) {
 				newNode = n.withMergedValueAt(val, i-1)
