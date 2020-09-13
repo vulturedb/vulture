@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/wojtechnology/cado/core"
+	"github.com/wojtechnology/cado/index"
 	"github.com/wojtechnology/cado/server"
 )
 
@@ -82,28 +86,30 @@ func serverExample() {
 	fmt.Printf("Got %v in %s\n", nd2, elapsed)
 }
 
-type Float float32
+type Float uint32
 
-func (f Float) Less(than core.IndexElem) bool {
+func (f Float) Less(than index.Key) bool {
 	return f < than.(Float)
 }
 
-func bTreeExample() {
-	start := time.Now()
-	index := core.NewBTreeIndex(25)
-	for i := 0; i < 100; i++ {
-		index.Put(Float(float32(i)))
-		fmt.Printf("Step %d\n", i)
-	}
-	t := time.Now()
-	elapsed := t.Sub(start)
-	fmt.Printf("Ran in %s\n", elapsed)
-	index.PrintInOrder()
-	index.Remove(Float(99.0))
-	fmt.Printf("Removed\n")
-	index.PrintInOrder()
+func (f Float) PutBytes(w io.Writer) error {
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, uint32(f))
+	_, err := w.Write(buf)
+	return err
+}
+
+func mstExample() {
+	ind := index.NewLocalMST(index.Base16, crypto.SHA256)
+	ind.Put(Float(420.0), Float(69.0))
+	val := ind.Get(Float(420.0))
+	fmt.Printf("%d\n", val)
+	val = ind.Get(Float(123.0))
+	fmt.Printf("%v\n", val)
+	val = ind.Get(Float(1230.0))
+	fmt.Printf("%v\n", val)
 }
 
 func main() {
-	bTreeExample()
+	mstExample()
 }

@@ -10,11 +10,11 @@ const (
 	Base32
 )
 
-func (b Base) LeadingZeros(obj []byte) uint {
+func (b Base) LeadingZeros(obj []byte) uint32 {
 	if b == Base(0) {
 		panic("Invalid base Base1")
 	}
-	numZeros := uint(0)
+	numZeros := uint32(0)
 	ctr := Base(0)
 	for _, bte := range obj {
 		for i := 0; i < 8; i++ {

@@ -1,29 +1,32 @@
 package index
 
-type Node interface{}
+import "crypto"
 
-type NodeStore interface {
-	Get(string) Node
-	Put(string, Node)
-	Remove(string)
+type nodeStore interface {
+	Get([]byte) Hashable
+	Put(Hashable) []byte
+	Remove([]byte)
 }
 
-type LocalNodeStore struct {
-	dict map[string]Node
+type localNodeStore struct {
+	dict map[string]Hashable
+	hash crypto.Hash
 }
 
-func NewLocalNodeStore() *LocalNodeStore {
-	return &LocalNodeStore{dict: map[string]Node{}}
+func newLocalNodeStore(hash crypto.Hash) *localNodeStore {
+	return &localNodeStore{dict: map[string]Hashable{}, hash: hash}
 }
 
-func (ns *LocalNodeStore) Get(k string) Node {
-	return ns.dict[k]
+func (ns *localNodeStore) Get(k []byte) Hashable {
+	return ns.dict[string(k)]
 }
 
-func (ns *LocalNodeStore) Put(k string, v Node) {
-	ns.dict[k] = v
+func (ns *localNodeStore) Put(n Hashable) []byte {
+	k := hash(n, ns.hash)
+	ns.dict[string(k)] = n
+	return k
 }
 
-func (ns *LocalNodeStore) Remove(k string) {
-	delete(ns.dict, k)
+func (ns *localNodeStore) Remove(k []byte) {
+	delete(ns.dict, string(k))
 }
