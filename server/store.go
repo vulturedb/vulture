@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	mh "github.com/multiformats/go-multihash"
 
-	"github.com/wojtechnology/cado/core"
+	"github.com/vulturedb/vulture/core"
 )
 
 func RegisterTypes() {

@@ -1,4 +1,4 @@
-module github.com/wojtechnology/cado
+module github.com/vulturedb/vulture
 
 go 1.14
 

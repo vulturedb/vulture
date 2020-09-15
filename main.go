@@ -9,9 +9,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/wojtechnology/cado/core"
-	"github.com/wojtechnology/cado/index"
-	"github.com/wojtechnology/cado/server"
+	"github.com/vulturedb/vulture/core"
+	"github.com/vulturedb/vulture/index"
+	"github.com/vulturedb/vulture/server"
 )
 
 func exampleSchema() core.Schema {
