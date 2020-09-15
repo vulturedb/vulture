@@ -2,36 +2,13 @@ package index
 
 import (
 	"crypto"
-	"encoding/binary"
-	"io"
 	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-type UInt32 uint32
-
-func (f UInt32) Less(than Key) bool {
-	return f < than.(UInt32)
-}
-
-func (f UInt32) PutBytes(w io.Writer) error {
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, uint32(f))
-	_, err := w.Write(buf)
-	return err
-}
-
-func (f UInt32) Merge(with Value) Value {
-	if f > with.(UInt32) {
-		return f
-	} else {
-		return with
-	}
-}
-
-func testRunner(t *testing.T, base Base, iters, elems, keyMod int) {
+func putAndGetRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 	rand.Seed(42)
 	for i := 0; i < iters; i++ {
 		index := NewLocalMST(base, crypto.SHA256)
@@ -56,9 +33,49 @@ func testRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 }
 
 func TestMSTPutAndGetIterBase32(t *testing.T) {
-	testRunner(t, Base32, 50, 1000, 100)
+	putAndGetRunner(t, Base32, 50, 1000, 100)
 }
 
 func TestMSTPutAndGetIterBase2(t *testing.T) {
-	testRunner(t, Base2, 50, 1000, 100)
+	putAndGetRunner(t, Base2, 50, 1000, 100)
+}
+
+func mergeRunner(t *testing.T, base Base) {
+	lInd := NewLocalMST(base, crypto.SHA256)
+	rInd := NewLocalMST(base, crypto.SHA256)
+	for i := 0; i < 50; i++ {
+		lInd.Put(UInt32(i), UInt32(i))
+		rInd.Put(UInt32(i+25), UInt32(i+50))
+	}
+	lIndCopy := lInd.Copy()
+
+	err := lInd.Merge(rInd)
+	assert.NoError(t, err)
+	for i := 0; i < 25; i++ {
+		assert.Equal(t, lInd.Get(UInt32(i)), UInt32(i))
+	}
+	for i := 25; i < 75; i++ {
+		assert.Equal(t, lInd.Get(UInt32(i)), UInt32(i+25))
+		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i+25))
+	}
+
+	err = rInd.Merge(lIndCopy)
+	assert.NoError(t, err)
+	for i := 0; i < 50; i++ {
+		assert.Equal(t, lIndCopy.Get(UInt32(i)), UInt32(i))
+	}
+	for i := 0; i < 25; i++ {
+		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i))
+	}
+	for i := 25; i < 75; i++ {
+		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i+25))
+	}
+}
+
+func TestMSTMergeBase32(t *testing.T) {
+	mergeRunner(t, Base32)
+}
+
+func TestMSTMergeBase2(t *testing.T) {
+	mergeRunner(t, Base2)
 }

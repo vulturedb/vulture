@@ -118,8 +118,7 @@ func mstExample() {
 		fmt.Printf("%t %d\n", val == Float(i), val)
 	}
 	ind.PrintInOrder()
-	rootHash := hex.EncodeToString(ind.RootHash())
-	fmt.Printf("%s\n", rootHash)
+	fmt.Printf("%s\n", hex.EncodeToString(ind.RootHash()))
 }
 
 func main() {

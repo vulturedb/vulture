@@ -9,16 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type bytes []byte
+type byteSlice []byte
 
-func (b bytes) PutBytes(w io.Writer) error {
+func (b byteSlice) PutBytes(w io.Writer) error {
 	_, err := w.Write(b)
 	return err
 }
 
-func TestHash(t *testing.T) {
-	obj := bytes("vulturedb")
-	actual := hash(obj, crypto.MD5)
+func TestHashHashable(t *testing.T) {
+	obj := byteSlice("vulturedb")
+	actual := HashHashable(obj, crypto.MD5)
 	expected, _ := hex.DecodeString("a5d94fbdd26039282fa3e22ba5b62f02")
 	assert.Equal(t, expected, actual)
 }

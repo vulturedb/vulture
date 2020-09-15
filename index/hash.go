@@ -9,7 +9,7 @@ type Hashable interface {
 	PutBytes(io.Writer) error
 }
 
-func hash(obj Hashable, h crypto.Hash) []byte {
+func HashHashable(obj Hashable, h crypto.Hash) []byte {
 	hasher := h.New()
 	err := obj.PutBytes(hasher)
 	if err != nil {
