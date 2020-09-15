@@ -1,2 +1,2 @@
-# cado
-Vine 3.0
+# Vulture DB
+A decentralized index using merkle search trees and CRDTs
