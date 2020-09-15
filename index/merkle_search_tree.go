@@ -307,7 +307,7 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 
 	lCur, rCur := uint(0), uint(0)
 	for i := 0; lCur <= lN && rCur <= rN; i++ {
-		var nextNode []byte
+		var nextNode, interNode []byte = nil, nil
 		if lCur == lN && rCur == rN {
 			nextNode = t.merge(with, lLow, rLow)
 			lCur++
@@ -315,15 +315,15 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 		} else if lCur == lN {
 			rChild := rNode.children[rCur]
 			children = append(children, merkleSearchChild{rChild.key, rChild.value, nil})
-			nextNode, lLow = t.split(lLow, rChild.key)
-			nextNode = t.merge(with, nextNode, rLow)
+			interNode, lLow = t.split(lLow, rChild.key)
+			nextNode = t.merge(with, interNode, rLow)
 			rLow = rChild.node
 			rCur++
 		} else if rCur == rN {
 			lChild := lNode.children[lCur]
 			children = append(children, merkleSearchChild{lChild.key, lChild.value, nil})
-			nextNode, rLow = with.splitInto(t.store, rLow, lChild.key)
-			nextNode = t.merge(with, lLow, nextNode)
+			interNode, rLow = with.splitInto(t.store, rLow, lChild.key)
+			nextNode = t.merge(with, lLow, interNode)
 			lLow = lChild.node
 			lCur++
 		} else {
@@ -331,14 +331,14 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			rChild := rNode.children[rCur]
 			if lChild.key.Less(rChild.key) {
 				children = append(children, merkleSearchChild{lChild.key, lChild.value, nil})
-				nextNode, rLow = with.splitInto(t.store, rLow, lChild.key)
-				nextNode = t.merge(with, lLow, nextNode)
+				interNode, rLow = with.splitInto(t.store, rLow, lChild.key)
+				nextNode = t.merge(with, lLow, interNode)
 				lLow = lChild.node
 				lCur++
 			} else if rChild.key.Less(lChild.key) {
 				children = append(children, merkleSearchChild{rChild.key, rChild.value, nil})
-				nextNode, lLow = t.split(lLow, rChild.key)
-				nextNode = t.merge(with, nextNode, rLow)
+				interNode, lLow = t.split(lLow, rChild.key)
+				nextNode = t.merge(with, interNode, rLow)
 				rLow = rChild.node
 				rCur++
 			} else {
@@ -355,6 +355,9 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			low = nextNode
 		} else {
 			children[i-1].node = nextNode
+		}
+		if interNode != nil {
+			t.store.Remove(interNode)
 		}
 	}
 
@@ -381,6 +384,18 @@ func (t *MerkleSearchTree) printInOrder(nodeHash []byte, height uint32) {
 		fmt.Printf("%s%v -> %v\n", strings.Repeat("\t", int(height-n.level)), child.key, child.value)
 		t.printInOrder(child.node, height)
 	}
+}
+
+func (t *MerkleSearchTree) numNodes(n []byte) uint {
+	if n == nil {
+		return 0
+	}
+	node := t.getNode(n)
+	nNodes := t.numNodes(node.low)
+	for _, child := range node.children {
+		nNodes += t.numNodes(child.node)
+	}
+	return nNodes + 1
 }
 
 func (t *MerkleSearchTree) Put(key Key, val Value) {
@@ -421,4 +436,8 @@ func (t *MerkleSearchTree) Copy() *MerkleSearchTree {
 		hash:  t.hash,
 		store: t.store.Copy(),
 	}
+}
+
+func (t *MerkleSearchTree) NumNodes() uint {
+	return t.numNodes(t.root)
 }

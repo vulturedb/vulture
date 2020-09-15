@@ -29,6 +29,7 @@ func putAndGetRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 		for key, val := range collected {
 			assert.Equal(t, index.Get(key), val)
 		}
+		assert.Equal(t, index.store.Size(), index.NumNodes())
 	}
 }
 
@@ -60,6 +61,9 @@ func mergeRunner(t *testing.T, base Base) {
 		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i+25))
 	}
 
+	assert.Equal(t, lInd.store.Size(), lInd.NumNodes())
+	assert.Equal(t, rInd.store.Size(), rInd.NumNodes())
+
 	err = rInd.Merge(lIndCopy)
 	assert.NoError(t, err)
 	for i := 0; i < 50; i++ {
@@ -72,7 +76,8 @@ func mergeRunner(t *testing.T, base Base) {
 		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i+25))
 	}
 
-	// Test size of store
+	assert.Equal(t, lIndCopy.store.Size(), lIndCopy.NumNodes())
+	assert.Equal(t, rInd.store.Size(), rInd.NumNodes())
 }
 
 func TestMSTMergeBase32(t *testing.T) {

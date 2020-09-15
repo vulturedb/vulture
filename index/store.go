@@ -7,6 +7,7 @@ type NodeStore interface {
 	Put(Hashable) []byte
 	Remove([]byte)
 	Copy() NodeStore
+	Size() uint
 }
 
 type LocalNodeStore struct {
@@ -38,4 +39,8 @@ func (ns *LocalNodeStore) Copy() NodeStore {
 		newDict[k] = v
 	}
 	return &LocalNodeStore{newDict, ns.hash}
+}
+
+func (ns *LocalNodeStore) Size() uint {
+	return uint(len(ns.dict))
 }
