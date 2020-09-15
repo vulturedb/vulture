@@ -157,12 +157,20 @@ func (t *MerkleSearchTree) getNode(hash []byte) *merkleSearchNode {
 	return t.store.Get(hash).(*merkleSearchNode)
 }
 
+func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *merkleSearchNode {
+	res := t.store.Get(hash)
+	if res == nil {
+		res = store.Get(hash)
+	}
+	return res.(*merkleSearchNode)
+}
+
 // Gets nodes from t.store but modifies store
 func (t *MerkleSearchTree) splitInto(store NodeStore, nodeHash []byte, key Key) ([]byte, []byte) {
 	if nodeHash == nil {
 		return nil, nil
 	}
-	n := t.getNode(nodeHash)
+	n := t.getNodeMaybe(nodeHash, store)
 	child, i := n.findChild(key)
 	if i > 0 && keysEqual(key, n.children[i-1].key) {
 		panic(fmt.Errorf("Trying to get split node but key matches. Key: %v, Level: %d", key, n.level))
@@ -172,7 +180,7 @@ func (t *MerkleSearchTree) splitInto(store NodeStore, nodeHash []byte, key Key) 
 	rChildren := make([]merkleSearchChild, uint(len(n.children))-i)
 	copy(lChildren, n.children[:i])
 	copy(rChildren, n.children[i:])
-	l, r := t.split(child, key)
+	l, r := t.splitInto(store, child, key)
 	var lHash, rHash []byte
 	if len(lChildren) == 0 {
 		lHash = l
@@ -265,12 +273,9 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 	if l == nil && r != nil {
 		// Recursively insert entire subtree into store
 		rNode := with.getNode(r)
+		t.merge(with, nil, rNode.low)
 		for _, rChild := range rNode.children {
-			rChildRes := t.merge(with, nil, rChild.node)
-			// TODO: Maybe remove this for performance reasons
-			if !bytes.Equal(rChildRes, rChild.node) {
-				panic(fmt.Errorf("Right child hashes not matching. %v != %v", rChild.node, rChildRes))
-			}
+			t.merge(with, nil, rChild.node)
 		}
 		return t.store.Put(rNode)
 	} else if r == nil || bytes.Equal(l, r) {
@@ -278,16 +283,12 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 	}
 
 	lNode := t.getNode(l)
-	t.store.Remove(l)
-	var rNode *merkleSearchNode
-	rRes := with.store.Get(r)
-	if rRes == nil {
-		rNode = t.getNode(r)
-	} else {
-		rNode = rRes.(*merkleSearchNode)
-	}
+	// When we split in certain cases, the split results are only added to t.store and not store
+	// (since we never want to mutate with.store).
+	rNode := with.getNodeMaybe(r, t.store)
+
 	var level uint32
-	var lLow, rLow []byte = nil, nil
+	var lLow, rLow []byte = l, r
 	var lChildren, rChildren []merkleSearchChild = []merkleSearchChild{}, []merkleSearchChild{}
 	if lNode.level >= rNode.level {
 		lLow = lNode.low
@@ -322,7 +323,6 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			lChild := lNode.children[lCur]
 			children = append(children, merkleSearchChild{lChild.key, lChild.value, nil})
 			nextNode, rLow = with.splitInto(t.store, rLow, lChild.key)
-			// TODO: `with` probably won't have `nextNode` and `rLow`. Fix merge to allow for this.
 			nextNode = t.merge(with, lLow, nextNode)
 			lLow = lChild.node
 			lCur++
@@ -332,7 +332,6 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			if lChild.key.Less(rChild.key) {
 				children = append(children, merkleSearchChild{lChild.key, lChild.value, nil})
 				nextNode, rLow = with.splitInto(t.store, rLow, lChild.key)
-				// TODO: `with` probably won't have `nextNode` and `rLow`. Fix merge to allow for this.
 				nextNode = t.merge(with, lLow, nextNode)
 				lLow = lChild.node
 				lCur++
@@ -358,14 +357,18 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			children[i-1].node = nextNode
 		}
 	}
-	if len(children) > 0 {
-		return t.store.Put(&merkleSearchNode{
-			level:    level,
-			low:      low,
-			children: children,
-		})
+
+	if len(children) == 0 {
+		panic("If the number of children is zero here, it means a tree is misformed")
 	}
-	return low
+
+	t.store.Remove(l)
+	hash := t.store.Put(&merkleSearchNode{
+		level:    level,
+		low:      low,
+		children: children,
+	})
+	return hash
 }
 
 func (t *MerkleSearchTree) printInOrder(nodeHash []byte, height uint32) {

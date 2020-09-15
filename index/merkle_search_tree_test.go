@@ -51,6 +51,7 @@ func mergeRunner(t *testing.T, base Base) {
 
 	err := lInd.Merge(rInd)
 	assert.NoError(t, err)
+
 	for i := 0; i < 25; i++ {
 		assert.Equal(t, lInd.Get(UInt32(i)), UInt32(i))
 	}
@@ -70,6 +71,8 @@ func mergeRunner(t *testing.T, base Base) {
 	for i := 25; i < 75; i++ {
 		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i+25))
 	}
+
+	// Test size of store
 }
 
 func TestMSTMergeBase32(t *testing.T) {
