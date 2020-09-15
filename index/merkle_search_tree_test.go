@@ -31,16 +31,13 @@ func (f UInt32) Merge(with Value) Value {
 	}
 }
 
-func TestMSTPutAndGetIter(t *testing.T) {
+func testRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 	rand.Seed(42)
-	iters := 50
-	elems := 10000
-	keyMod := uint32(100)
 	for i := 0; i < iters; i++ {
-		index := NewLocalMST(Base16, crypto.SHA256)
+		index := NewLocalMST(base, crypto.SHA256)
 		collected := map[UInt32]Value{}
 		for j := 0; j < elems; j++ {
-			key := UInt32(rand.Uint32() % keyMod)
+			key := UInt32(rand.Uint32() % uint32(keyMod))
 			val := UInt32(rand.Uint32())
 			index.Put(key, val)
 			existingVal, exists := collected[key]
@@ -56,4 +53,12 @@ func TestMSTPutAndGetIter(t *testing.T) {
 			assert.Equal(t, index.Get(key), val)
 		}
 	}
+}
+
+func TestMSTPutAndGetIterBase32(t *testing.T) {
+	testRunner(t, Base32, 50, 1000, 100)
+}
+
+func TestMSTPutAndGetIterBase2(t *testing.T) {
+	testRunner(t, Base2, 50, 1000, 100)
 }

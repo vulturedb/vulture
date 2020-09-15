@@ -109,14 +109,15 @@ func (f Float) Merge(with index.Value) index.Value {
 }
 
 func mstExample() {
-	ind := index.NewLocalMST(index.Base16, crypto.SHA256)
-	for i := 0.0; i < 100.0; i += 1.0 {
+	ind := index.NewLocalMST(index.Base2, crypto.SHA256)
+	for i := 0.0; i < 500.0; i += 1.0 {
 		ind.Put(Float(i), Float(i))
 	}
-	for i := 0.0; i < 100.0; i += 1.0 {
+	for i := 0.0; i < 500.0; i += 1.0 {
 		val := ind.Get(Float(i))
 		fmt.Printf("%t %d\n", val == Float(i), val)
 	}
+	ind.PrintInOrder()
 	rootHash := hex.EncodeToString(ind.RootHash())
 	fmt.Printf("%s\n", rootHash)
 }
