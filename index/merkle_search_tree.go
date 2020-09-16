@@ -366,12 +366,12 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 	}
 
 	t.store.Remove(l)
-	hash := t.store.Put(&merkleSearchNode{
+	t.store.Remove(r)
+	return t.store.Put(&merkleSearchNode{
 		level:    level,
 		low:      low,
 		children: children,
 	})
-	return hash
 }
 
 func (t *MerkleSearchTree) printInOrder(nodeHash []byte, height uint32) {
