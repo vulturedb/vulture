@@ -98,6 +98,7 @@ func TestMSTMergeBase2(t *testing.T) {
 }
 
 func TestMSTMergeConsecutive(t *testing.T) {
+	// This used to catch a node leak so keeping the test around to make sure we don't regress.
 	lInd := NewLocalMST(Base32, crypto.SHA256)
 	rInd := NewLocalMST(Base32, crypto.SHA256)
 	for i := 0; i < 50; i++ {
@@ -134,4 +135,20 @@ func TestMSTMergeConsecutive(t *testing.T) {
 
 	assert.Equal(t, lIndCopy.store.Size(), lIndCopy.NumNodes())
 	assert.Equal(t, rInd.store.Size(), rInd.NumNodes())
+}
+
+func TestMSTMergeDiffBase(t *testing.T) {
+	lInd := NewLocalMST(Base2, crypto.SHA256)
+	rInd := NewLocalMST(Base32, crypto.SHA256)
+	err := lInd.Merge(rInd)
+	assert.Error(t, err)
+	assert.Equal(t, "Mismatching bases. 2^1 vs 2^5", err.Error())
+}
+
+func TestMSTMergeDiffHash(t *testing.T) {
+	lInd := NewLocalMST(Base32, crypto.SHA512)
+	rInd := NewLocalMST(Base32, crypto.SHA256)
+	err := lInd.Merge(rInd)
+	assert.Error(t, err)
+	assert.Equal(t, "Mismatching hash functions. 7 vs 5", err.Error())
 }

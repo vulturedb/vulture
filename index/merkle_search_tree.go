@@ -412,7 +412,7 @@ func (t *MerkleSearchTree) Merge(with *MerkleSearchTree) error {
 		return fmt.Errorf("Mismatching bases. 2^%d vs 2^%d", t.base, with.base)
 	} else if t.hash != with.hash {
 		// TODO: go 1.15 has string representation for hash functions so use that instead
-		return fmt.Errorf("Mismatching hash funcitons. %d vs %d", t.hash, with.hash)
+		return fmt.Errorf("Mismatching hash functions. %d vs %d", t.hash, with.hash)
 	}
 	t.root = t.merge(with, t.root, with.root)
 	return nil
