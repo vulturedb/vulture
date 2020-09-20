@@ -23,16 +23,12 @@ func NewLocalMST(base Base, hash crypto.Hash) *MerkleSearchTree {
 	}
 }
 
-func (t *MerkleSearchTree) getNode(hash []byte) *Node {
-	return t.store.Get(hash).(*Node)
-}
-
 func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *Node {
 	res := t.store.Get(hash)
 	if res == nil {
 		res = store.Get(hash)
 	}
-	return res.(*Node)
+	return res
 }
 
 // Gets nodes from t.store but modifies store
@@ -93,7 +89,7 @@ func (t *MerkleSearchTree) put(nodeHash []byte, key Key, val Value, atLevel uint
 			children: []Child{{key, val, nil}},
 		}
 	} else {
-		n := t.getNode(nodeHash)
+		n := t.store.Get(nodeHash)
 		if atLevel < n.level {
 			t.store.Remove(nodeHash)
 			childHash, i := n.findChild(key)
@@ -125,7 +121,7 @@ func (t *MerkleSearchTree) get(nodeHash []byte, key Key) Value {
 	if nodeHash == nil {
 		return nil
 	}
-	n := t.getNode(nodeHash)
+	n := t.store.Get(nodeHash)
 	i := n.find(key)
 	var recurNode []byte = nil
 	if i > 0 {
@@ -142,7 +138,7 @@ func (t *MerkleSearchTree) get(nodeHash []byte, key Key) Value {
 func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []byte {
 	if l == nil && r != nil {
 		// Recursively insert entire subtree into store
-		rNode := with.getNode(r)
+		rNode := with.store.Get(r)
 		t.merge(with, nil, rNode.low)
 		for _, rChild := range rNode.children {
 			t.merge(with, nil, rChild.node)
@@ -152,7 +148,7 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 		return l
 	}
 
-	lNode := t.getNode(l)
+	lNode := t.store.Get(l)
 	// When we split in certain cases, the split results are only added to t.store and not store
 	// (since we never want to mutate with.store).
 	rNode := with.getNodeMaybe(r, t.store)
@@ -248,7 +244,7 @@ func (t *MerkleSearchTree) printInOrder(nodeHash []byte, height uint32) {
 	if nodeHash == nil {
 		return
 	}
-	n := t.getNode(nodeHash)
+	n := t.store.Get(nodeHash)
 	t.printInOrder(n.low, height)
 	for _, child := range n.children {
 		fmt.Printf("%s%v -> %v\n", strings.Repeat("\t", int(height-n.level)), child.key, child.value)
@@ -260,7 +256,7 @@ func (t *MerkleSearchTree) numNodes(n []byte) uint {
 	if n == nil {
 		return 0
 	}
-	node := t.getNode(n)
+	node := t.store.Get(n)
 	nNodes := t.numNodes(node.low)
 	for _, child := range node.children {
 		nNodes += t.numNodes(child.node)
@@ -290,7 +286,7 @@ func (t *MerkleSearchTree) Merge(with *MerkleSearchTree) error {
 
 func (t *MerkleSearchTree) PrintInOrder() {
 	if t.root != nil {
-		height := t.store.Get(t.root).(*Node).level
+		height := t.store.Get(t.root).level
 		t.printInOrder(t.root, height)
 	}
 }

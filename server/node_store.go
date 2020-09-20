@@ -5,7 +5,7 @@ import (
 
 	icore "github.com/ipfs/interface-go-ipfs-core"
 
-	"github.com/vulturedb/vulture/index"
+	"github.com/vulturedb/vulture/mst"
 )
 
 type IPFSNodeStore struct {
@@ -17,11 +17,11 @@ func NewIPFSNodeStore(ctx context.Context, dagService icore.APIDagService) *IPFS
 	return &IPFSNodeStore{ctx, dagService}
 }
 
-func (*IPFSNodeStore) Get(k []byte) index.Hashable {
+func (*IPFSNodeStore) Get(k []byte) mst.Hashable {
 	return nil
 }
 
-func (*IPFSNodeStore) Put(n index.Hashable) []byte {
+func (*IPFSNodeStore) Put(n mst.Hashable) []byte {
 	return nil
 }
 
@@ -29,7 +29,7 @@ func (*IPFSNodeStore) Remove(k []byte) {
 
 }
 
-func Copy() index.NodeStore {
+func Copy() mst.NodeStore {
 	return nil
 }
 

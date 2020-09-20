@@ -3,27 +3,27 @@ package mst
 import "crypto"
 
 type NodeStore interface {
-	Get([]byte) Hashable
-	Put(Hashable) []byte
+	Get([]byte) *Node
+	Put(*Node) []byte
 	Remove([]byte)
 	Copy() NodeStore
 	Size() uint
 }
 
 type LocalNodeStore struct {
-	dict map[string]Hashable
+	dict map[string]*Node
 	hash crypto.Hash
 }
 
 func NewLocalNodeStore(hash crypto.Hash) *LocalNodeStore {
-	return &LocalNodeStore{dict: map[string]Hashable{}, hash: hash}
+	return &LocalNodeStore{dict: map[string]*Node{}, hash: hash}
 }
 
-func (ns *LocalNodeStore) Get(k []byte) Hashable {
+func (ns *LocalNodeStore) Get(k []byte) *Node {
 	return ns.dict[string(k)]
 }
 
-func (ns *LocalNodeStore) Put(n Hashable) []byte {
+func (ns *LocalNodeStore) Put(n *Node) []byte {
 	k := HashHashable(n, ns.hash)
 	ns.dict[string(k)] = n
 	return k
@@ -34,7 +34,7 @@ func (ns *LocalNodeStore) Remove(k []byte) {
 }
 
 func (ns *LocalNodeStore) Copy() NodeStore {
-	newDict := map[string]Hashable{}
+	newDict := map[string]*Node{}
 	for k, v := range ns.dict {
 		newDict[k] = v
 	}
