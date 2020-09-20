@@ -1,4 +1,4 @@
-package index
+package mst
 
 import "crypto"
 

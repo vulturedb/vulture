@@ -1,141 +1,11 @@
-package index
+package mst
 
 import (
 	"bytes"
 	"crypto"
-	"encoding/binary"
 	"fmt"
-	"io"
-	"sort"
 	"strings"
 )
-
-type merkleSearchChild struct {
-	key   Key
-	value Value
-	node  []byte
-}
-
-type merkleSearchNode struct {
-	level    uint32
-	low      []byte
-	children []merkleSearchChild
-}
-
-func (n *merkleSearchNode) PutBytes(w io.Writer) error {
-	// This can probably be improved...
-	// I still don't even know if there are any cases where this easily breaks
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, n.level)
-	_, err := w.Write(buf)
-	if err != nil {
-		return err
-	}
-	// Write key/values first
-	if n.children != nil {
-		for _, child := range n.children {
-			err = child.key.PutBytes(w)
-			if err != nil {
-				return err
-			}
-			err = child.value.PutBytes(w)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	// Links second
-	if n.low != nil {
-		_, err = w.Write(n.low)
-		if err != nil {
-			return err
-		}
-	}
-	if n.children != nil {
-		for _, child := range n.children {
-			if child.node != nil {
-				_, err = w.Write(child.node)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func (n *merkleSearchNode) find(key Key) uint {
-	i := sort.Search(len(n.children), func(i int) bool {
-		return key.Less(n.children[i].key)
-	})
-	if i < 0 {
-		panic(fmt.Sprintf("i cannot be < 0, got %d", i))
-	}
-	return uint(i)
-}
-
-func (n *merkleSearchNode) childAt(i uint) []byte {
-	if i == 0 {
-		return n.low
-	} else {
-		return n.children[i-1].node
-	}
-}
-
-func (n *merkleSearchNode) findChild(key Key) ([]byte, uint) {
-	i := n.find(key)
-	if i > 0 && keysEqual(key, n.children[i-1].key) {
-		panic(fmt.Errorf("Trying to get childHash but key matches. Key: %v, Level: %d", key, n.level))
-	}
-	return n.childAt(i), i
-}
-
-func (n *merkleSearchNode) withHashAt(hash []byte, at uint) *merkleSearchNode {
-	if at == 0 {
-		return &merkleSearchNode{
-			level:    n.level,
-			low:      hash,
-			children: n.children,
-		}
-	} else {
-		newChildren := make([]merkleSearchChild, len(n.children))
-		copy(newChildren, n.children)
-		newChildren[at-1].node = hash
-		return &merkleSearchNode{
-			level:    n.level,
-			low:      n.low,
-			children: newChildren,
-		}
-	}
-}
-
-func (n *merkleSearchNode) withMergedValueAt(val Value, at uint) *merkleSearchNode {
-	newChildren := make([]merkleSearchChild, len(n.children))
-	copy(newChildren, n.children)
-	newChildren[at].value = n.children[at].value.Merge(val)
-	return &merkleSearchNode{
-		level:    n.level,
-		low:      n.low,
-		children: newChildren,
-	}
-}
-
-func (n *merkleSearchNode) withChildInsertedAt(
-	key Key,
-	val Value,
-	node []byte,
-	at uint,
-) *merkleSearchNode {
-	newChildren := make([]merkleSearchChild, len(n.children)+1)
-	copy(newChildren[:at], n.children[:at])
-	copy(newChildren[at+1:], n.children[at:])
-	newChildren[at] = merkleSearchChild{key, val, node}
-	return &merkleSearchNode{
-		level:    n.level,
-		low:      n.low,
-		children: newChildren,
-	}
-}
 
 type MerkleSearchTree struct {
 	root  []byte
@@ -153,16 +23,16 @@ func NewLocalMST(base Base, hash crypto.Hash) *MerkleSearchTree {
 	}
 }
 
-func (t *MerkleSearchTree) getNode(hash []byte) *merkleSearchNode {
-	return t.store.Get(hash).(*merkleSearchNode)
+func (t *MerkleSearchTree) getNode(hash []byte) *Node {
+	return t.store.Get(hash).(*Node)
 }
 
-func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *merkleSearchNode {
+func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *Node {
 	res := t.store.Get(hash)
 	if res == nil {
 		res = store.Get(hash)
 	}
-	return res.(*merkleSearchNode)
+	return res.(*Node)
 }
 
 // Gets nodes from t.store but modifies store
@@ -176,8 +46,8 @@ func (t *MerkleSearchTree) splitInto(store NodeStore, nodeHash []byte, key Key) 
 		panic(fmt.Errorf("Trying to get split node but key matches. Key: %v, Level: %d", key, n.level))
 	}
 	store.Remove(nodeHash)
-	lChildren := make([]merkleSearchChild, i)
-	rChildren := make([]merkleSearchChild, uint(len(n.children))-i)
+	lChildren := make([]Child, i)
+	rChildren := make([]Child, uint(len(n.children))-i)
 	copy(lChildren, n.children[:i])
 	copy(rChildren, n.children[i:])
 	l, r := t.splitInto(store, child, key)
@@ -185,7 +55,7 @@ func (t *MerkleSearchTree) splitInto(store NodeStore, nodeHash []byte, key Key) 
 	if len(lChildren) == 0 {
 		lHash = l
 	} else {
-		lNode := &merkleSearchNode{
+		lNode := &Node{
 			level:    n.level,
 			low:      n.low,
 			children: lChildren,
@@ -196,7 +66,7 @@ func (t *MerkleSearchTree) splitInto(store NodeStore, nodeHash []byte, key Key) 
 	if len(rChildren) == 0 {
 		rHash = r
 	} else {
-		rNode := &merkleSearchNode{
+		rNode := &Node{
 			level:    n.level,
 			low:      r,
 			children: rChildren,
@@ -215,12 +85,12 @@ func (t *MerkleSearchTree) leadingZeros(key Key) uint32 {
 }
 
 func (t *MerkleSearchTree) put(nodeHash []byte, key Key, val Value, atLevel uint32) []byte {
-	var newNode *merkleSearchNode = nil
+	var newNode *Node = nil
 	if nodeHash == nil {
-		newNode = &merkleSearchNode{
+		newNode = &Node{
 			level:    atLevel,
 			low:      nil,
-			children: []merkleSearchChild{{key, val, nil}},
+			children: []Child{{key, val, nil}},
 		}
 	} else {
 		n := t.getNode(nodeHash)
@@ -241,10 +111,10 @@ func (t *MerkleSearchTree) put(nodeHash []byte, key Key, val Value, atLevel uint
 			}
 		} else {
 			l, r := t.split(nodeHash, key)
-			newNode = &merkleSearchNode{
+			newNode = &Node{
 				level:    atLevel,
 				low:      l,
-				children: []merkleSearchChild{{key, val, r}},
+				children: []Child{{key, val, r}},
 			}
 		}
 	}
@@ -289,7 +159,7 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 
 	var level uint32
 	var lLow, rLow []byte = l, r
-	var lChildren, rChildren []merkleSearchChild = []merkleSearchChild{}, []merkleSearchChild{}
+	var lChildren, rChildren []Child = []Child{}, []Child{}
 	if lNode.level >= rNode.level {
 		lLow = lNode.low
 		lChildren = lNode.children
@@ -303,7 +173,7 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 	lN, rN := uint(len(lChildren)), uint(len(rChildren))
 
 	var low []byte = nil
-	children := []merkleSearchChild{}
+	children := []Child{}
 
 	lCur, rCur := uint(0), uint(0)
 	for i := 0; lCur <= lN && rCur <= rN; i++ {
@@ -314,14 +184,14 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			rCur++
 		} else if lCur == lN {
 			rChild := rNode.children[rCur]
-			children = append(children, merkleSearchChild{rChild.key, rChild.value, nil})
+			children = append(children, Child{rChild.key, rChild.value, nil})
 			interNode, lLow = t.split(lLow, rChild.key)
 			nextNode = t.merge(with, interNode, rLow)
 			rLow = rChild.node
 			rCur++
 		} else if rCur == rN {
 			lChild := lNode.children[lCur]
-			children = append(children, merkleSearchChild{lChild.key, lChild.value, nil})
+			children = append(children, Child{lChild.key, lChild.value, nil})
 			interNode, rLow = with.splitInto(t.store, rLow, lChild.key)
 			nextNode = t.merge(with, lLow, interNode)
 			lLow = lChild.node
@@ -330,13 +200,13 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			lChild := lNode.children[lCur]
 			rChild := rNode.children[rCur]
 			if lChild.key.Less(rChild.key) {
-				children = append(children, merkleSearchChild{lChild.key, lChild.value, nil})
+				children = append(children, Child{lChild.key, lChild.value, nil})
 				interNode, rLow = with.splitInto(t.store, rLow, lChild.key)
 				nextNode = t.merge(with, lLow, interNode)
 				lLow = lChild.node
 				lCur++
 			} else if rChild.key.Less(lChild.key) {
-				children = append(children, merkleSearchChild{rChild.key, rChild.value, nil})
+				children = append(children, Child{rChild.key, rChild.value, nil})
 				interNode, lLow = t.split(lLow, rChild.key)
 				nextNode = t.merge(with, interNode, rLow)
 				rLow = rChild.node
@@ -344,7 +214,7 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 			} else {
 				nextNode = t.merge(with, lLow, rLow)
 				mergedValue := lChild.value.Merge(rChild.value)
-				children = append(children, merkleSearchChild{lChild.key, mergedValue, nil})
+				children = append(children, Child{lChild.key, mergedValue, nil})
 				lLow = lChild.node
 				rLow = rChild.node
 				lCur++
@@ -367,7 +237,7 @@ func (t *MerkleSearchTree) merge(with *MerkleSearchTree, l []byte, r []byte) []b
 
 	t.store.Remove(l)
 	t.store.Remove(r)
-	return t.store.Put(&merkleSearchNode{
+	return t.store.Put(&Node{
 		level:    level,
 		low:      low,
 		children: children,
@@ -420,7 +290,7 @@ func (t *MerkleSearchTree) Merge(with *MerkleSearchTree) error {
 
 func (t *MerkleSearchTree) PrintInOrder() {
 	if t.root != nil {
-		height := t.store.Get(t.root).(*merkleSearchNode).level
+		height := t.store.Get(t.root).(*Node).level
 		t.printInOrder(t.root, height)
 	}
 }
