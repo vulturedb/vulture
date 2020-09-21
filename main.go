@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto"
 	_ "crypto/sha256"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -14,27 +13,6 @@ import (
 
 	"github.com/vulturedb/vulture/mst"
 )
-
-type UInt32 uint32
-
-func (f UInt32) Less(than mst.Key) bool {
-	return f < than.(UInt32)
-}
-
-func (f UInt32) PutBytes(w io.Writer) error {
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, uint32(f))
-	_, err := w.Write(buf)
-	return err
-}
-
-func (f UInt32) Merge(with mst.Value) mst.Value {
-	if f > with.(UInt32) {
-		return f
-	} else {
-		return with
-	}
-}
 
 const usage string = `
 Available commands:
@@ -81,7 +59,7 @@ func repl() {
 				printReplUsage()
 				continue
 			}
-			ind.Put(UInt32(rawKey), UInt32(rawVal))
+			ind.Put(mst.UInt32(rawKey), mst.UInt32(rawVal))
 		case "get":
 			if len(tokens) != 2 {
 				printReplUsage()
@@ -92,7 +70,7 @@ func repl() {
 				printReplUsage()
 				continue
 			}
-			fmt.Printf("%d\n", ind.Get(UInt32(rawKey)))
+			fmt.Printf("%d\n", ind.Get(mst.UInt32(rawKey)))
 		case "root-hash":
 			if len(tokens) != 1 {
 				printReplUsage()

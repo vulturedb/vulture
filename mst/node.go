@@ -1,9 +1,7 @@
 package mst
 
 import (
-	"encoding/binary"
 	"fmt"
-	"io"
 	"sort"
 )
 
@@ -19,46 +17,11 @@ type Node struct {
 	children []Child
 }
 
-func (n *Node) PutBytes(w io.Writer) error {
-	// This can probably be improved...
-	// I still don't even know if there are any cases where this easily breaks
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, n.level)
-	_, err := w.Write(buf)
-	if err != nil {
-		return err
+func hashToWrite(hash []byte, hashSize int) []byte {
+	if hash == nil {
+		return make([]byte, hashSize)
 	}
-	// Write key/values first
-	if n.children != nil {
-		for _, child := range n.children {
-			err = child.key.PutBytes(w)
-			if err != nil {
-				return err
-			}
-			err = child.value.PutBytes(w)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	// Links second
-	if n.low != nil {
-		_, err = w.Write(n.low)
-		if err != nil {
-			return err
-		}
-	}
-	if n.children != nil {
-		for _, child := range n.children {
-			if child.node != nil {
-				_, err = w.Write(child.node)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
+	return hash
 }
 
 func (n *Node) find(key Key) uint {

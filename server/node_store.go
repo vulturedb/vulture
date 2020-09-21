@@ -8,24 +8,28 @@ import (
 	"github.com/vulturedb/vulture/mst"
 )
 
-type IPFSNodeStore struct {
+type IPFSMSTNode struct {
+	level uint32
+}
+
+type IPFSMSTNodeStore struct {
 	ctx        context.Context
 	dagService icore.APIDagService
 }
 
-func NewIPFSNodeStore(ctx context.Context, dagService icore.APIDagService) *IPFSNodeStore {
-	return &IPFSNodeStore{ctx, dagService}
+func NewIPFSMSTNodeStore(ctx context.Context, dagService icore.APIDagService) *IPFSMSTNodeStore {
+	return &IPFSMSTNodeStore{ctx, dagService}
 }
 
-func (*IPFSNodeStore) Get(k []byte) mst.Hashable {
+func (*IPFSMSTNodeStore) Get(k []byte) mst.Hashable {
 	return nil
 }
 
-func (*IPFSNodeStore) Put(n mst.Hashable) []byte {
+func (*IPFSMSTNodeStore) Put(n mst.Hashable) []byte {
 	return nil
 }
 
-func (*IPFSNodeStore) Remove(k []byte) {
+func (*IPFSMSTNodeStore) Remove(k []byte) {
 
 }
 

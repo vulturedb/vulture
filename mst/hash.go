@@ -2,16 +2,11 @@ package mst
 
 import (
 	"crypto"
-	"io"
 )
 
-type Hashable interface {
-	PutBytes(io.Writer) error
-}
-
-func HashHashable(obj Hashable, h crypto.Hash) []byte {
+func HashWritable(obj Writable, h crypto.Hash) []byte {
 	hasher := h.New()
-	err := obj.PutBytes(hasher)
+	err := obj.Write(hasher)
 	if err != nil {
 		// This should never error for any hash function
 		panic(err)

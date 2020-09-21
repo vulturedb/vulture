@@ -77,7 +77,7 @@ func (t *MerkleSearchTree) split(nodeHash []byte, key Key) ([]byte, []byte) {
 }
 
 func (t *MerkleSearchTree) leadingZeros(key Key) uint32 {
-	return t.base.LeadingZeros(HashHashable(key, t.hash))
+	return t.base.LeadingZeros(HashWritable(key, t.hash))
 }
 
 func (t *MerkleSearchTree) put(nodeHash []byte, key Key, val Value, atLevel uint32) []byte {

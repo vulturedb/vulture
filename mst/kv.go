@@ -1,17 +1,16 @@
 package mst
 
 import (
-	"encoding/binary"
 	"io"
 )
 
 type Key interface {
-	Hashable
+	Writable
 	Less(than Key) bool
 }
 
 type Value interface {
-	Hashable
+	Writable
 	Merge(with Value) Value
 }
 
@@ -26,15 +25,12 @@ func (f UInt32) Less(than Key) bool {
 	return f < than.(UInt32)
 }
 
-func (f UInt32) PutBytes(w io.Writer) error {
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, uint32(f))
-	_, err := w.Write(buf)
-	return err
+func (f UInt32) Write(w io.Writer) error {
+	return putUint32(uint32(f), w)
 }
 
 func (f UInt32) Merge(with Value) Value {
-	if f > with.(UInt32) {
+	if with.(UInt32).Less(f) {
 		return f
 	} else {
 		return with
