@@ -8,20 +8,41 @@ import (
 type Child struct {
 	key   Key
 	value Value
-	node  []byte
+	high  []byte
 }
 
+func (c Child) Key() Key {
+	return c.key
+}
+
+func (c Child) Value() Value {
+	return c.value
+}
+
+func (c Child) High() []byte {
+	return c.high
+}
+
+// Represents a node in a Merkle Search Tree
+// It should always be true that len(children) > 0, i.e. empty nodes should not exist.
 type Node struct {
 	level    uint32
 	low      []byte
 	children []Child
 }
 
-func hashToWrite(hash []byte, hashSize int) []byte {
-	if hash == nil {
-		return make([]byte, hashSize)
-	}
-	return hash
+func (n *Node) Level() uint32 {
+	return n.level
+}
+
+func (n *Node) Low() []byte {
+	return n.low
+}
+
+func (n *Node) Children() []Child {
+	children := make([]Child, len(n.children))
+	copy(children, n.children)
+	return children
 }
 
 func (n *Node) find(key Key) uint {
@@ -38,7 +59,7 @@ func (n *Node) childAt(i uint) []byte {
 	if i == 0 {
 		return n.low
 	} else {
-		return n.children[i-1].node
+		return n.children[i-1].high
 	}
 }
 
@@ -60,7 +81,7 @@ func (n *Node) withHashAt(hash []byte, at uint) *Node {
 	} else {
 		newChildren := make([]Child, len(n.children))
 		copy(newChildren, n.children)
-		newChildren[at-1].node = hash
+		newChildren[at-1].high = hash
 		return &Node{
 			level:    n.level,
 			low:      n.low,

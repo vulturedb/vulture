@@ -13,9 +13,17 @@ type NodeStore interface {
 	Size() uint
 }
 
-type WritableNode Node
+// Only used for computing the hash for a given node
+type HashableNode Node
 
-func (n *WritableNode) Write(w io.Writer) error {
+func hashToWrite(hash []byte, hashSize int) []byte {
+	if hash == nil {
+		return make([]byte, hashSize)
+	}
+	return hash
+}
+
+func (n *HashableNode) Write(w io.Writer) error {
 	// TODO: Test this if it's ever used in something production related. It really shouldn't be since
 	// this node store is mainly meant for testing. Persistent node stores will need to thing more
 	// about the serialization format.
@@ -30,32 +38,31 @@ func (n *WritableNode) Write(w io.Writer) error {
 		return err
 	}
 
-	if n.children != nil {
-		for _, child := range n.children {
-			err = child.key.Write(w)
-			if err != nil {
-				return err
-			}
-			err = child.value.Write(w)
-			if err != nil {
-				return err
-			}
+	for _, child := range n.children {
+		err = child.key.Write(w)
+		if err != nil {
+			return err
+		}
+		err = child.value.Write(w)
+		if err != nil {
+			return err
 		}
 	}
 
+	// Assumes all hash sizes are exactly the same
 	hashSize := 0
 	if n.low != nil {
 		hashSize = len(n.low)
 	} else {
 		for _, child := range n.children {
-			if child.node != nil {
-				hashSize = len(child.node)
+			if child.high != nil {
+				hashSize = len(child.high)
 				break
 			}
 		}
 	}
 
-	// Don't waste space on
+	// Don't waste space on zeroed out hashes
 	if hashSize > 0 {
 		if n.low != nil {
 			_, err = w.Write(hashToWrite(n.low, hashSize))
@@ -65,7 +72,7 @@ func (n *WritableNode) Write(w io.Writer) error {
 		}
 
 		for _, child := range n.children {
-			_, err = w.Write(hashToWrite(child.node, hashSize))
+			_, err = w.Write(hashToWrite(child.high, hashSize))
 			if err != nil {
 				return err
 			}
@@ -88,7 +95,7 @@ func (ns *LocalNodeStore) Get(k []byte) *Node {
 }
 
 func (ns *LocalNodeStore) Put(n *Node) []byte {
-	wn := WritableNode(*n)
+	wn := HashableNode(*n)
 	k := HashWritable(&wn, ns.hash)
 	ns.dict[string(k)] = n
 	return k
