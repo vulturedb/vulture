@@ -44,6 +44,7 @@ func (kr UInt32ValueReader) FromBytes(b []byte) (mst.Value, error) {
 }
 
 func repl() {
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -61,14 +62,25 @@ func repl() {
 		UInt32KeyReader{},
 		UInt32ValueReader{},
 	)
-	ind := mst.NewMST(mst.Base16, crypto.SHA256, store)
+	var ind *mst.MerkleSearchTree
+
+	if len(os.Args) > 1 {
+		startHash, err := hex.DecodeString(os.Args[1])
+		if err != nil {
+			panic(err)
+		}
+		ind = mst.NewMSTWithRoot(startHash, mst.Base16, crypto.SHA256, store)
+	} else {
+		ind = mst.NewMST(mst.Base16, crypto.SHA256, store)
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	for true {
 		fmt.Printf("> ")
 		text, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println("Goodbye!")
+				fmt.Printf("bye bye %s\n", hex.EncodeToString(ind.RootHash()))
 				return
 			}
 			panic(err)

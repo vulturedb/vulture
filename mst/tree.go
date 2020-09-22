@@ -23,13 +23,17 @@ func NewLocalMST(base Base, hash crypto.Hash) *MerkleSearchTree {
 	}
 }
 
-func NewMST(base Base, hash crypto.Hash, store NodeStore) *MerkleSearchTree {
+func NewMSTWithRoot(root []byte, base Base, hash crypto.Hash, store NodeStore) *MerkleSearchTree {
 	return &MerkleSearchTree{
-		root:  nil,
+		root:  root,
 		base:  base,
 		hash:  hash,
 		store: store,
 	}
+}
+
+func NewMST(base Base, hash crypto.Hash, store NodeStore) *MerkleSearchTree {
+	return NewMSTWithRoot(nil, base, hash, store)
 }
 
 func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *Node {
