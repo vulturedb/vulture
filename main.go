@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto"
 	_ "crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -11,7 +13,10 @@ import (
 	"strconv"
 	"strings"
 
+	mh "github.com/multiformats/go-multihash"
+
 	"github.com/vulturedb/vulture/mst"
+	"github.com/vulturedb/vulture/server"
 )
 
 const usage string = `
@@ -25,10 +30,38 @@ func printReplUsage() {
 	fmt.Printf(strings.TrimLeft(usage, "\n"))
 }
 
+type UInt32KeyReader struct{}
+
+func (kr UInt32KeyReader) FromBytes(b []byte) (mst.Key, error) {
+	return mst.UInt32(binary.LittleEndian.Uint32(b)), nil
+}
+
+type UInt32ValueReader struct{}
+
+func (kr UInt32ValueReader) FromBytes(b []byte) (mst.Value, error) {
+	return mst.UInt32(binary.LittleEndian.Uint32(b)), nil
+}
+
 func repl() {
-	ind := mst.NewLocalMST(mst.Base2, crypto.SHA256)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ipfs, err := server.SpawnDefault(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	store := server.NewIPFSMSTNodeStore(
+		ctx,
+		ipfs.Dag(),
+		mh.SHA2_256,
+		UInt32KeyReader{},
+		UInt32ValueReader{},
+	)
+	ind := mst.NewMST(mst.Base2, crypto.SHA256, store)
 	reader := bufio.NewReader(os.Stdin)
 	for true {
+		fmt.Printf("> ")
 		text, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {

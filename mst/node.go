@@ -11,6 +11,10 @@ type Child struct {
 	high  []byte
 }
 
+func NewChild(key Key, value Value, high []byte) Child {
+	return Child{key, value, high}
+}
+
 func (c Child) Key() Key {
 	return c.key
 }
@@ -23,12 +27,16 @@ func (c Child) High() []byte {
 	return c.high
 }
 
-// Represents a node in a Merkle Search Tree
+// Node represents a node in a Merkle Search Tree
 // It should always be true that len(children) > 0, i.e. empty nodes should not exist.
 type Node struct {
 	level    uint32
 	low      []byte
 	children []Child
+}
+
+func NewNode(level uint32, low []byte, children []Child) *Node {
+	return &Node{level, low, children}
 }
 
 func (n *Node) Level() uint32 {

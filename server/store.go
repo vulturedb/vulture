@@ -3,10 +3,11 @@ package server
 import (
 	"context"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/mitchellh/mapstructure"
 	mh "github.com/multiformats/go-multihash"
 
 	"github.com/vulturedb/vulture/core"
