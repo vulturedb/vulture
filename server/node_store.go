@@ -34,6 +34,9 @@ func hashToLink(hash []byte) (*node.Link, error) {
 }
 
 func linkToHash(l *node.Link) []byte {
+	if l == nil {
+		return nil
+	}
 	return l.Cid.Bytes()
 }
 
@@ -44,7 +47,8 @@ type iPFSMSTChild struct {
 }
 
 func newIPFSMSTChild(c mst.Child) iPFSMSTChild {
-	var keyBuf, valBuf *bytes.Buffer
+	keyBuf := new(bytes.Buffer)
+	valBuf := new(bytes.Buffer)
 	err := c.Key().Write(keyBuf)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't write key to byte buffer: %s", err))
@@ -133,13 +137,20 @@ func (s *IPFSMSTNodeStore) Get(k []byte) *mst.Node {
 	if err != nil {
 		panic(fmt.Errorf("Couldn't get node: %s", err))
 	}
+	raw, _, err := nd.Resolve([]string{})
+	if err != nil {
+		panic(fmt.Errorf("Couldn't resolve node: %s", err))
+	}
 	node := &iPFSMSTNode{}
-	err = unmarshal(node, nd)
+	err = unmarshal(node, raw)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't unmarshal node: %s", err))
 	}
-	// TODO: Node to node
-	return nil
+	mstNode, err := node.toMSTNode(s.keyReader, s.valReader)
+	if err != nil {
+		panic(fmt.Errorf("Couldn't convert to mst node: %s", err))
+	}
+	return mstNode
 }
 
 func (s *IPFSMSTNodeStore) Put(n *mst.Node) []byte {

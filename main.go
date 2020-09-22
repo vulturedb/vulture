@@ -24,6 +24,7 @@ Available commands:
 put <key> <value>
 get <key>
 root-hash
+print
 `
 
 func printReplUsage() {
@@ -51,6 +52,8 @@ func repl() {
 		panic(err)
 	}
 
+	server.RegisterTypes()
+
 	store := server.NewIPFSMSTNodeStore(
 		ctx,
 		ipfs.Dag(),
@@ -58,7 +61,7 @@ func repl() {
 		UInt32KeyReader{},
 		UInt32ValueReader{},
 	)
-	ind := mst.NewMST(mst.Base2, crypto.SHA256, store)
+	ind := mst.NewMST(mst.Base16, crypto.SHA256, store)
 	reader := bufio.NewReader(os.Stdin)
 	for true {
 		fmt.Printf("> ")

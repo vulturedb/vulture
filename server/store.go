@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
+	format "github.com/ipfs/go-ipld-format"
 	ipld "github.com/ipfs/go-ipld-format"
 	mh "github.com/multiformats/go-multihash"
 
@@ -16,6 +17,11 @@ import (
 func RegisterTypes() {
 	cbor.RegisterCborType(core.FieldSpec{})
 	cbor.RegisterCborType(core.Schema{})
+
+	cbor.RegisterCborType(iPFSMSTChild{})
+	cbor.RegisterCborType(iPFSMSTNode{})
+
+	cbor.RegisterCborType(format.Link{})
 }
 
 func unmarshal(v interface{}, m interface{}) error {
