@@ -15,8 +15,8 @@ import (
 
 	mh "github.com/multiformats/go-multihash"
 
+	"github.com/vulturedb/vulture/ipfs"
 	"github.com/vulturedb/vulture/mst"
-	"github.com/vulturedb/vulture/server"
 )
 
 const usage string = `
@@ -48,16 +48,16 @@ func repl() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ipfs, err := server.SpawnDefault(ctx)
+	coreAPI, err := ipfs.SpawnDefault(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	server.RegisterTypes()
+	ipfs.RegisterTypes()
 
-	store := server.NewIPFSMSTNodeStore(
+	store := ipfs.NewIPFSMSTNodeStore(
 		ctx,
-		ipfs.Dag(),
+		coreAPI.Dag(),
 		mh.SHA2_256,
 		UInt32KeyReader{},
 		UInt32ValueReader{},
