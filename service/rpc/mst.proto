@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package vulture.service.rpc;
+
+option go_package = "github.com/vulturedb/vulture/service/rpc";
+
+message MSTChild {
+  bytes key = 1;
+  bytes value = 2;
+  bytes high = 3;
+}
+
+message MSTNode {
+  uint32 level = 1;
+  bytes low = 2;
+  repeated MSTChild children = 3;
+}
+
+message GetNodeRequest {
+  bytes nodeHash = 1;
+}
+
+service MSTService {
+  rpc GetNode(GetNodeRequest) returns (MSTNode) {}
+}

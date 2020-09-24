@@ -21,10 +21,14 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37 // indirect
 	github.com/sqs/goreturns v0.0.0-20181028201513-538ac6014518 // indirect
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
-	golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6 // indirect
+	golang.org/x/net v0.0.0-20200923182212-328152dc79b1 // indirect
+	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
+	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200827010519-17fd2f27a9e3 // indirect
 	golang.org/x/tools/gopls v0.4.4 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	google.golang.org/genproto v0.0.0-20200923140941-5646d36feee1 // indirect
+	google.golang.org/grpc v1.32.0 // indirect
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v0.0.0-20200922230038-4e932bbcb079 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 )
