@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package vulture.service.rpc;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "github.com/vulturedb/vulture/service/rpc";
 
 message MSTChild {
@@ -16,10 +18,28 @@ message MSTNode {
   repeated MSTChild children = 3;
 }
 
-message GetNodeRequest {
-  bytes nodeHash = 1;
+message MSTPutRequest {
+  uint32 key = 1;
+  uint32 value = 2;
+}
+
+message MSTGetRequest {
+  uint32 key = 1;
+}
+
+message MSTGetResponse {
+  uint32 value = 1;
 }
 
 service MSTService {
-  rpc GetNode(GetNodeRequest) returns (MSTNode) {}
+  rpc Put(MSTPutRequest) returns (google.protobuf.Empty) {}
+  rpc Get(MSTGetRequest) returns (MSTGetResponse) {}
+}
+
+message MSTManageCommand {
+  string val = 1;
+}
+
+service MSTManagerService {
+  rpc Manage(stream MSTManageCommand) returns (stream MSTManageCommand) {}
 }
