@@ -66,6 +66,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	rpc.RegisterMSTServiceServer(grpcServer, mstServer)
+	rpc.RegisterMSTManagerServiceServer(grpcServer, server.NewMSTManagerServer())
 	err = grpcServer.Serve(lis)
 	if err != nil {
 		log.Fatalf("Failed to serve: %v", err)

@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"io"
 	"log"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -22,12 +22,14 @@ func NewMSTServer(tree *mst.MerkleSearchTree) *MSTServer {
 func (s *MSTServer) Get(ctx context.Context, in *rpc.MSTGetRequest) (*rpc.MSTGetResponse, error) {
 	key := in.GetKey()
 	val := s.tree.Get(mst.UInt32(key))
-	log.Printf("Get %d: %d", key, val)
+	var primVal uint32
 	if val == nil {
-		return nil, fmt.Errorf("not found")
+		primVal = 0
 	} else {
-		return &rpc.MSTGetResponse{Value: uint32(val.(mst.UInt32))}, nil
+		primVal = uint32(val.(mst.UInt32))
 	}
+	log.Printf("Get %d: %d", key, primVal)
+	return &rpc.MSTGetResponse{Value: primVal}, nil
 }
 
 func (s *MSTServer) Put(ctx context.Context, in *rpc.MSTPutRequest) (*empty.Empty, error) {
@@ -36,4 +38,28 @@ func (s *MSTServer) Put(ctx context.Context, in *rpc.MSTPutRequest) (*empty.Empt
 	s.tree.Put(mst.UInt32(key), mst.UInt32(val))
 	log.Printf("Put %d: %d", key, val)
 	return &empty.Empty{}, nil
+}
+
+type MSTManagerServer struct {
+}
+
+func NewMSTManagerServer() *MSTManagerServer {
+	return &MSTManagerServer{}
+}
+
+func (s *MSTManagerServer) Manage(stream rpc.MSTManagerService_ManageServer) error {
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		log.Printf("Received %s", in.GetVal())
+		err = stream.Send(&rpc.MSTManageCommand{Val: in.GetVal()})
+		if err != nil {
+			return err
+		}
+	}
 }

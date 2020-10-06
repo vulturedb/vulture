@@ -19,6 +19,7 @@ const usage string = `
 Available commands:
 put <key> <value>
 get <key>
+loop
 `
 
 func printReplUsage() {
@@ -40,6 +41,7 @@ func main() {
 	defer conn.Close()
 	fmt.Printf("Connected to %s\n", address)
 	client := rpc.NewMSTServiceClient(conn)
+	streamClient := rpc.NewMSTManagerServiceClient(conn)
 
 	// Repl loop
 	reader := bufio.NewReader(os.Stdin)
@@ -98,18 +100,22 @@ func main() {
 				log.Fatalf("Error when getting: %v", err)
 			}
 			fmt.Printf("%d\n", resp.GetValue())
-		// case "root-hash":
-		// 	if len(tokens) != 1 {
-		// 		printReplUsage()
-		// 		continue
-		// 	}
-		// 	fmt.Println(hex.EncodeToString(ind.RootHash()))
-		// case "print":
-		// 	if len(tokens) != 1 {
-		// 		printReplUsage()
-		// 		continue
-		// 	}
-		// 	ind.PrintInOrder()
+		case "loop":
+			stream, err := streamClient.Manage(context.Background())
+			if err != nil {
+				log.Fatalf("Error when starting stream: %v", err)
+			}
+			for i := 0; i < 5; i++ {
+				err = stream.Send(&rpc.MSTManageCommand{Val: fmt.Sprintf("Hi %d", i)})
+				if err != nil {
+					log.Fatalf("Error when sending in stream: %v", err)
+				}
+				out, err := stream.Recv()
+				if err != nil {
+					log.Fatalf("Error when receiving from stream: %v", err)
+				}
+				fmt.Printf("%s\n", out.GetVal())
+			}
 		default:
 			printReplUsage()
 		}
