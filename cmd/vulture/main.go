@@ -33,6 +33,10 @@ func (kr UInt32ValueReader) FromBytes(b []byte) (mst.Value, error) {
 var host = flag.String("host", "localhost", "post to serve API for")
 var port = flag.Int("port", 6667, "port to serve API on")
 
+// Temporary
+var otherHost = flag.String("other-host", "localhost", "host of other server")
+var otherPort = flag.Int("other-port", 6668, "port of other server")
+
 func main() {
 	flag.Parse()
 
@@ -54,7 +58,9 @@ func main() {
 		UInt32ValueReader{},
 	)
 	tree := mst.NewMST(mst.Base16, crypto.SHA256, store)
-	mstServer := server.NewMSTServer(tree)
+	peers := server.NewPeers(&server.SelectAll{})
+	peers.Add(*otherHost, *otherPort)
+	mstServer := server.NewMSTServer(tree, peers)
 
 	// Start the grpc server
 	address := fmt.Sprintf("%s:%d", *host, *port)

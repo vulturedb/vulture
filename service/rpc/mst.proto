@@ -36,10 +36,19 @@ service MSTService {
   rpc Get(MSTGetRequest) returns (MSTGetResponse) {}
 }
 
-message MSTManageCommand {
-  string val = 1;
+message MSTGossipRequest {
+  bytes root_hash = 1;
+}
+
+message MSTGetNodesRequest {
+  repeated bytes hashes = 1;
+}
+
+message MSTGetNodesResponse {
+  repeated MSTNode nodes = 1;
 }
 
 service MSTManagerService {
-  rpc Manage(stream MSTManageCommand) returns (stream MSTManageCommand) {}
+  rpc Gossip(MSTGossipRequest) returns (google.protobuf.Empty) {}
+  rpc GetNodes(MSTGetNodesRequest) returns (MSTGetNodesResponse) {}
 }

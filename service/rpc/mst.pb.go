@@ -305,16 +305,16 @@ func (x *MSTGetResponse) GetValue() uint32 {
 	return 0
 }
 
-type MSTManageCommand struct {
+type MSTGossipRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Val string `protobuf:"bytes,1,opt,name=val,proto3" json:"val,omitempty"`
+	RootHash []byte `protobuf:"bytes,1,opt,name=root_hash,json=rootHash,proto3" json:"root_hash,omitempty"`
 }
 
-func (x *MSTManageCommand) Reset() {
-	*x = MSTManageCommand{}
+func (x *MSTGossipRequest) Reset() {
+	*x = MSTGossipRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_mst_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -322,13 +322,13 @@ func (x *MSTManageCommand) Reset() {
 	}
 }
 
-func (x *MSTManageCommand) String() string {
+func (x *MSTGossipRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MSTManageCommand) ProtoMessage() {}
+func (*MSTGossipRequest) ProtoMessage() {}
 
-func (x *MSTManageCommand) ProtoReflect() protoreflect.Message {
+func (x *MSTGossipRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_mst_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -340,16 +340,110 @@ func (x *MSTManageCommand) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MSTManageCommand.ProtoReflect.Descriptor instead.
-func (*MSTManageCommand) Descriptor() ([]byte, []int) {
+// Deprecated: Use MSTGossipRequest.ProtoReflect.Descriptor instead.
+func (*MSTGossipRequest) Descriptor() ([]byte, []int) {
 	return file_mst_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *MSTManageCommand) GetVal() string {
+func (x *MSTGossipRequest) GetRootHash() []byte {
 	if x != nil {
-		return x.Val
+		return x.RootHash
 	}
-	return ""
+	return nil
+}
+
+type MSTGetNodesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Hashes [][]byte `protobuf:"bytes,1,rep,name=hashes,proto3" json:"hashes,omitempty"`
+}
+
+func (x *MSTGetNodesRequest) Reset() {
+	*x = MSTGetNodesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_mst_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MSTGetNodesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MSTGetNodesRequest) ProtoMessage() {}
+
+func (x *MSTGetNodesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mst_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MSTGetNodesRequest.ProtoReflect.Descriptor instead.
+func (*MSTGetNodesRequest) Descriptor() ([]byte, []int) {
+	return file_mst_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MSTGetNodesRequest) GetHashes() [][]byte {
+	if x != nil {
+		return x.Hashes
+	}
+	return nil
+}
+
+type MSTGetNodesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Nodes []*MSTNode `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty"`
+}
+
+func (x *MSTGetNodesResponse) Reset() {
+	*x = MSTGetNodesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_mst_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MSTGetNodesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MSTGetNodesResponse) ProtoMessage() {}
+
+func (x *MSTGetNodesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mst_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MSTGetNodesResponse.ProtoReflect.Descriptor instead.
+func (*MSTGetNodesResponse) Descriptor() ([]byte, []int) {
+	return file_mst_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *MSTGetNodesResponse) GetNodes() []*MSTNode {
+	if x != nil {
+		return x.Nodes
+	}
+	return nil
 }
 
 var File_mst_proto protoreflect.FileDescriptor
@@ -378,30 +472,43 @@ var file_mst_proto_rawDesc = []byte{
 	0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x22,
 	0x26, 0x0a, 0x0e, 0x4d, 0x53, 0x54, 0x47, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
 	0x65, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d,
-	0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x24, 0x0a, 0x10, 0x4d, 0x53, 0x54, 0x4d, 0x61,
-	0x6e, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x76,
-	0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x76, 0x61, 0x6c, 0x32, 0xa3, 0x01,
-	0x0a, 0x0a, 0x4d, 0x53, 0x54, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x43, 0x0a, 0x03,
-	0x50, 0x75, 0x74, 0x12, 0x22, 0x2e, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x50, 0x75, 0x74,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22,
-	0x00, 0x12, 0x50, 0x0a, 0x03, 0x47, 0x65, 0x74, 0x12, 0x22, 0x2e, 0x76, 0x75, 0x6c, 0x74, 0x75,
-	0x72, 0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x4d,
-	0x53, 0x54, 0x47, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x76,
+	0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x2f, 0x0a, 0x10, 0x4d, 0x53, 0x54, 0x47, 0x6f,
+	0x73, 0x73, 0x69, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x72,
+	0x6f, 0x6f, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08,
+	0x72, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x22, 0x2c, 0x0a, 0x12, 0x4d, 0x53, 0x54, 0x47,
+	0x65, 0x74, 0x4e, 0x6f, 0x64, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16,
+	0x0a, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x06,
+	0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x49, 0x0a, 0x13, 0x4d, 0x53, 0x54, 0x47, 0x65, 0x74,
+	0x4e, 0x6f, 0x64, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x0a,
+	0x05, 0x6e, 0x6f, 0x64, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76,
 	0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72,
-	0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x47, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x32, 0x71, 0x0a, 0x11, 0x4d, 0x53, 0x54, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65,
-	0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x5c, 0x0a, 0x06, 0x4d, 0x61, 0x6e, 0x61,
-	0x67, 0x65, 0x12, 0x25, 0x2e, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x73, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x4d, 0x61, 0x6e, 0x61,
-	0x67, 0x65, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x1a, 0x25, 0x2e, 0x76, 0x75, 0x6c, 0x74,
-	0x75, 0x72, 0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e,
-	0x4d, 0x53, 0x54, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
-	0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x64, 0x62, 0x2f, 0x76,
-	0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x72,
-	0x70, 0x63, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x05, 0x6e, 0x6f, 0x64, 0x65,
+	0x73, 0x32, 0xa3, 0x01, 0x0a, 0x0a, 0x4d, 0x53, 0x54, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x43, 0x0a, 0x03, 0x50, 0x75, 0x74, 0x12, 0x22, 0x2e, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72,
+	0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x53,
+	0x54, 0x50, 0x75, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d,
+	0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x50, 0x0a, 0x03, 0x47, 0x65, 0x74, 0x12, 0x22, 0x2e, 0x76,
+	0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72,
+	0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x47, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x23, 0x2e, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x47, 0x65, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32, 0xbf, 0x01, 0x0a, 0x11, 0x4d, 0x53, 0x54, 0x4d,
+	0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x49, 0x0a,
+	0x06, 0x47, 0x6f, 0x73, 0x73, 0x69, 0x70, 0x12, 0x25, 0x2e, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72,
+	0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x53,
+	0x54, 0x47, 0x6f, 0x73, 0x73, 0x69, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x5f, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x4e,
+	0x6f, 0x64, 0x65, 0x73, 0x12, 0x27, 0x2e, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x47, 0x65,
+	0x74, 0x4e, 0x6f, 0x64, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e,
+	0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e,
+	0x72, 0x70, 0x63, 0x2e, 0x4d, 0x53, 0x54, 0x47, 0x65, 0x74, 0x4e, 0x6f, 0x64, 0x65, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74,
+	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x64,
+	0x62, 0x2f, 0x76, 0x75, 0x6c, 0x74, 0x75, 0x72, 0x65, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2f, 0x72, 0x70, 0x63, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -416,29 +523,34 @@ func file_mst_proto_rawDescGZIP() []byte {
 	return file_mst_proto_rawDescData
 }
 
-var file_mst_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_mst_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_mst_proto_goTypes = []interface{}{
-	(*MSTChild)(nil),         // 0: vulture.service.rpc.MSTChild
-	(*MSTNode)(nil),          // 1: vulture.service.rpc.MSTNode
-	(*MSTPutRequest)(nil),    // 2: vulture.service.rpc.MSTPutRequest
-	(*MSTGetRequest)(nil),    // 3: vulture.service.rpc.MSTGetRequest
-	(*MSTGetResponse)(nil),   // 4: vulture.service.rpc.MSTGetResponse
-	(*MSTManageCommand)(nil), // 5: vulture.service.rpc.MSTManageCommand
-	(*empty.Empty)(nil),      // 6: google.protobuf.Empty
+	(*MSTChild)(nil),            // 0: vulture.service.rpc.MSTChild
+	(*MSTNode)(nil),             // 1: vulture.service.rpc.MSTNode
+	(*MSTPutRequest)(nil),       // 2: vulture.service.rpc.MSTPutRequest
+	(*MSTGetRequest)(nil),       // 3: vulture.service.rpc.MSTGetRequest
+	(*MSTGetResponse)(nil),      // 4: vulture.service.rpc.MSTGetResponse
+	(*MSTGossipRequest)(nil),    // 5: vulture.service.rpc.MSTGossipRequest
+	(*MSTGetNodesRequest)(nil),  // 6: vulture.service.rpc.MSTGetNodesRequest
+	(*MSTGetNodesResponse)(nil), // 7: vulture.service.rpc.MSTGetNodesResponse
+	(*empty.Empty)(nil),         // 8: google.protobuf.Empty
 }
 var file_mst_proto_depIdxs = []int32{
 	0, // 0: vulture.service.rpc.MSTNode.children:type_name -> vulture.service.rpc.MSTChild
-	2, // 1: vulture.service.rpc.MSTService.Put:input_type -> vulture.service.rpc.MSTPutRequest
-	3, // 2: vulture.service.rpc.MSTService.Get:input_type -> vulture.service.rpc.MSTGetRequest
-	5, // 3: vulture.service.rpc.MSTManagerService.Manage:input_type -> vulture.service.rpc.MSTManageCommand
-	6, // 4: vulture.service.rpc.MSTService.Put:output_type -> google.protobuf.Empty
-	4, // 5: vulture.service.rpc.MSTService.Get:output_type -> vulture.service.rpc.MSTGetResponse
-	5, // 6: vulture.service.rpc.MSTManagerService.Manage:output_type -> vulture.service.rpc.MSTManageCommand
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 1: vulture.service.rpc.MSTGetNodesResponse.nodes:type_name -> vulture.service.rpc.MSTNode
+	2, // 2: vulture.service.rpc.MSTService.Put:input_type -> vulture.service.rpc.MSTPutRequest
+	3, // 3: vulture.service.rpc.MSTService.Get:input_type -> vulture.service.rpc.MSTGetRequest
+	5, // 4: vulture.service.rpc.MSTManagerService.Gossip:input_type -> vulture.service.rpc.MSTGossipRequest
+	6, // 5: vulture.service.rpc.MSTManagerService.GetNodes:input_type -> vulture.service.rpc.MSTGetNodesRequest
+	8, // 6: vulture.service.rpc.MSTService.Put:output_type -> google.protobuf.Empty
+	4, // 7: vulture.service.rpc.MSTService.Get:output_type -> vulture.service.rpc.MSTGetResponse
+	8, // 8: vulture.service.rpc.MSTManagerService.Gossip:output_type -> google.protobuf.Empty
+	7, // 9: vulture.service.rpc.MSTManagerService.GetNodes:output_type -> vulture.service.rpc.MSTGetNodesResponse
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_mst_proto_init() }
@@ -508,7 +620,31 @@ func file_mst_proto_init() {
 			}
 		}
 		file_mst_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MSTManageCommand); i {
+			switch v := v.(*MSTGossipRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_mst_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MSTGetNodesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_mst_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MSTGetNodesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -526,7 +662,7 @@ func file_mst_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_mst_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
@@ -660,7 +796,8 @@ var _MSTService_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MSTManagerServiceClient interface {
-	Manage(ctx context.Context, opts ...grpc.CallOption) (MSTManagerService_ManageClient, error)
+	Gossip(ctx context.Context, in *MSTGossipRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetNodes(ctx context.Context, in *MSTGetNodesRequest, opts ...grpc.CallOption) (*MSTGetNodesResponse, error)
 }
 
 type mSTManagerServiceClient struct {
@@ -671,91 +808,94 @@ func NewMSTManagerServiceClient(cc grpc.ClientConnInterface) MSTManagerServiceCl
 	return &mSTManagerServiceClient{cc}
 }
 
-func (c *mSTManagerServiceClient) Manage(ctx context.Context, opts ...grpc.CallOption) (MSTManagerService_ManageClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_MSTManagerService_serviceDesc.Streams[0], "/vulture.service.rpc.MSTManagerService/Manage", opts...)
+func (c *mSTManagerServiceClient) Gossip(ctx context.Context, in *MSTGossipRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/vulture.service.rpc.MSTManagerService/Gossip", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &mSTManagerServiceManageClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type MSTManagerService_ManageClient interface {
-	Send(*MSTManageCommand) error
-	Recv() (*MSTManageCommand, error)
-	grpc.ClientStream
-}
-
-type mSTManagerServiceManageClient struct {
-	grpc.ClientStream
-}
-
-func (x *mSTManagerServiceManageClient) Send(m *MSTManageCommand) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *mSTManagerServiceManageClient) Recv() (*MSTManageCommand, error) {
-	m := new(MSTManageCommand)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
+func (c *mSTManagerServiceClient) GetNodes(ctx context.Context, in *MSTGetNodesRequest, opts ...grpc.CallOption) (*MSTGetNodesResponse, error) {
+	out := new(MSTGetNodesResponse)
+	err := c.cc.Invoke(ctx, "/vulture.service.rpc.MSTManagerService/GetNodes", in, out, opts...)
+	if err != nil {
 		return nil, err
 	}
-	return m, nil
+	return out, nil
 }
 
 // MSTManagerServiceServer is the server API for MSTManagerService service.
 type MSTManagerServiceServer interface {
-	Manage(MSTManagerService_ManageServer) error
+	Gossip(context.Context, *MSTGossipRequest) (*empty.Empty, error)
+	GetNodes(context.Context, *MSTGetNodesRequest) (*MSTGetNodesResponse, error)
 }
 
 // UnimplementedMSTManagerServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedMSTManagerServiceServer struct {
 }
 
-func (*UnimplementedMSTManagerServiceServer) Manage(MSTManagerService_ManageServer) error {
-	return status.Errorf(codes.Unimplemented, "method Manage not implemented")
+func (*UnimplementedMSTManagerServiceServer) Gossip(context.Context, *MSTGossipRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Gossip not implemented")
+}
+func (*UnimplementedMSTManagerServiceServer) GetNodes(context.Context, *MSTGetNodesRequest) (*MSTGetNodesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNodes not implemented")
 }
 
 func RegisterMSTManagerServiceServer(s *grpc.Server, srv MSTManagerServiceServer) {
 	s.RegisterService(&_MSTManagerService_serviceDesc, srv)
 }
 
-func _MSTManagerService_Manage_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(MSTManagerServiceServer).Manage(&mSTManagerServiceManageServer{stream})
-}
-
-type MSTManagerService_ManageServer interface {
-	Send(*MSTManageCommand) error
-	Recv() (*MSTManageCommand, error)
-	grpc.ServerStream
-}
-
-type mSTManagerServiceManageServer struct {
-	grpc.ServerStream
-}
-
-func (x *mSTManagerServiceManageServer) Send(m *MSTManageCommand) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *mSTManagerServiceManageServer) Recv() (*MSTManageCommand, error) {
-	m := new(MSTManageCommand)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _MSTManagerService_Gossip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MSTGossipRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(MSTManagerServiceServer).Gossip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/vulture.service.rpc.MSTManagerService/Gossip",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MSTManagerServiceServer).Gossip(ctx, req.(*MSTGossipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MSTManagerService_GetNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MSTGetNodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MSTManagerServiceServer).GetNodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/vulture.service.rpc.MSTManagerService/GetNodes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MSTManagerServiceServer).GetNodes(ctx, req.(*MSTGetNodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _MSTManagerService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "vulture.service.rpc.MSTManagerService",
 	HandlerType: (*MSTManagerServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
+	Methods: []grpc.MethodDesc{
 		{
-			StreamName:    "Manage",
-			Handler:       _MSTManagerService_Manage_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
+			MethodName: "Gossip",
+			Handler:    _MSTManagerService_Gossip_Handler,
+		},
+		{
+			MethodName: "GetNodes",
+			Handler:    _MSTManagerService_GetNodes_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "mst.proto",
 }
