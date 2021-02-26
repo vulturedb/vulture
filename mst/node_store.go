@@ -116,3 +116,19 @@ func (ns *LocalNodeStore) Copy() NodeStore {
 func (ns *LocalNodeStore) Size() uint {
 	return uint(len(ns.dict))
 }
+
+func FindMissingNodes(ns NodeStore, hash []byte) [][]byte {
+	if hash == nil {
+		return [][]byte{}
+	}
+	n := ns.Get(hash)
+	if n == nil {
+		return [][]byte{hash}
+	}
+	missingNodes := [][]byte{}
+	missingNodes = append(missingNodes, FindMissingNodes(ns, n.low)...)
+	for _, child := range n.children {
+		missingNodes = append(missingNodes, FindMissingNodes(ns, child.high)...)
+	}
+	return missingNodes
+}

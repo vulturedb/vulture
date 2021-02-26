@@ -27,7 +27,7 @@ func (s *MSTServer) gossip(ctx context.Context, rootHash []byte) {
 	peers := s.peers.Select()
 	for _, peer := range peers {
 		// TODO: should keep these connections around to save on round-trips, maybe there's a connection
-		// pool library we can use
+		// pool library we can use.
 		address := fmt.Sprintf("%s:%d", peer.Hostname, peer.Port)
 		conn, err := grpc.Dial(address, grpc.WithInsecure())
 		if err != nil {
