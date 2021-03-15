@@ -52,9 +52,15 @@ func mergeRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 
 		lCollected := map[UInt32]Value{}
 		rCollected := map[UInt32]Value{}
+		mCollected := map[UInt32]Value{}
 		for j := 0; j < elems; j++ {
 			key, val := genKeyVal(keyMod)
 			lInd = lInd.Put(key, val)
+			if oVal, exists := mCollected[key]; exists {
+				mCollected[key] = val.Merge(oVal)
+			} else {
+				mCollected[key] = val
+			}
 			if oVal, exists := lCollected[key]; exists {
 				lCollected[key] = val.Merge(oVal)
 			} else {
@@ -62,10 +68,10 @@ func mergeRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 			}
 			key, val = genKeyVal(keyMod)
 			rInd = rInd.Put(key, val)
-			if oVal, exists := lCollected[key]; exists {
-				lCollected[key] = val.Merge(oVal)
+			if oVal, exists := mCollected[key]; exists {
+				mCollected[key] = val.Merge(oVal)
 			} else {
-				lCollected[key] = val
+				mCollected[key] = val
 			}
 			if oVal, exists := rCollected[key]; exists {
 				rCollected[key] = val.Merge(oVal)
@@ -74,7 +80,7 @@ func mergeRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 			}
 		}
 
-		lInd, err := lInd.Merge(rInd)
+		mInd, err := lInd.Merge(rInd)
 		assert.NoError(t, err)
 
 		for key, val := range lCollected {
@@ -83,9 +89,13 @@ func mergeRunner(t *testing.T, base Base, iters, elems, keyMod int) {
 		for key, val := range rCollected {
 			assert.Equal(t, rInd.Get(key), val)
 		}
+		for key, val := range mCollected {
+			assert.Equal(t, mInd.Get(key), val)
+		}
 
 		assert.Equal(t, lInd.store.Size(), lInd.NumNodes())
 		assert.Equal(t, rInd.store.Size(), rInd.NumNodes())
+		assert.Equal(t, mInd.store.Size(), mInd.NumNodes())
 	}
 }
 
@@ -105,36 +115,49 @@ func TestMSTMergeConsecutive(t *testing.T) {
 		lInd.Put(UInt32(i), UInt32(i))
 		rInd.Put(UInt32(i+25), UInt32(i+50))
 	}
-	lIndCopy := lInd.Copy()
 
-	err := lInd.Merge(rInd)
+	mInd, err := lInd.Merge(rInd)
 	assert.NoError(t, err)
 
-	for i := 0; i < 25; i++ {
+	// Check originals are the same
+	for i := 0; i < 50; i++ {
 		assert.Equal(t, lInd.Get(UInt32(i)), UInt32(i))
+		assert.Equal(t, rInd.Get(UInt32(i+25)), UInt32(i+50))
+	}
+
+	// Check merged
+	for i := 0; i < 25; i++ {
+		assert.Equal(t, mInd.Get(UInt32(i)), UInt32(i))
 	}
 	for i := 25; i < 75; i++ {
-		assert.Equal(t, lInd.Get(UInt32(i)), UInt32(i+25))
-		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i+25))
+		assert.Equal(t, mInd.Get(UInt32(i)), UInt32(i+25))
 	}
 
 	assert.Equal(t, lInd.store.Size(), lInd.NumNodes())
 	assert.Equal(t, rInd.store.Size(), rInd.NumNodes())
+	assert.Equal(t, mInd.store.Size(), mInd.NumNodes())
 
-	err = rInd.Merge(lIndCopy)
+	// Redo idk why but I did it before
+	mInd, err = rInd.Merge(lInd)
 	assert.NoError(t, err)
+
+	// Check originals are the same
 	for i := 0; i < 50; i++ {
-		assert.Equal(t, lIndCopy.Get(UInt32(i)), UInt32(i))
+		assert.Equal(t, lInd.Get(UInt32(i)), UInt32(i))
+		assert.Equal(t, rInd.Get(UInt32(i+25)), UInt32(i+50))
 	}
+
+	// Check merged
 	for i := 0; i < 25; i++ {
-		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i))
+		assert.Equal(t, mInd.Get(UInt32(i)), UInt32(i))
 	}
 	for i := 25; i < 75; i++ {
-		assert.Equal(t, rInd.Get(UInt32(i)), UInt32(i+25))
+		assert.Equal(t, mInd.Get(UInt32(i)), UInt32(i+25))
 	}
 
-	assert.Equal(t, lIndCopy.store.Size(), lIndCopy.NumNodes())
+	assert.Equal(t, lInd.store.Size(), lInd.NumNodes())
 	assert.Equal(t, rInd.store.Size(), rInd.NumNodes())
+	assert.Equal(t, mInd.store.Size(), mInd.NumNodes())
 }
 
 func TestMSTMergeDiffBase(t *testing.T) {
