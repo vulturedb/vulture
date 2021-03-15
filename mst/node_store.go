@@ -3,6 +3,8 @@ package mst
 import (
 	"crypto"
 	"io"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type NodeStore interface {
@@ -25,7 +27,7 @@ func hashToWrite(hash []byte, hashSize int) []byte {
 
 func (n *HashableNode) Write(w io.Writer) error {
 	// TODO: Test this if it's ever used in something production related. It really shouldn't be since
-	// this node store is mainly meant for testing. Persistent node stores will need to thing more
+	// this node store is mainly meant for testing. Persistent node stores will need to think more
 	// about the serialization format.
 	err := putUint32(n.level, w)
 	if err != nil {
@@ -115,6 +117,49 @@ func (ns *LocalNodeStore) Copy() NodeStore {
 
 func (ns *LocalNodeStore) Size() uint {
 	return uint(len(ns.dict))
+}
+
+type NodeStore2 interface {
+	Get([]byte) *Node
+	Put(*Node) (NodeStore2, []byte)
+	Remove([]byte) NodeStore2
+	Size() uint
+}
+
+type LocalNodeStore2 struct {
+	dict *immutable.Map
+	hash crypto.Hash
+}
+
+func NewLocalNodeStore2(hash crypto.Hash) *LocalNodeStore2 {
+	return &LocalNodeStore2{dict: immutable.NewMap(nil), hash: hash}
+}
+
+func (ns *LocalNodeStore2) withDict(dict *immutable.Map) NodeStore2 {
+	return &LocalNodeStore2{dict: dict, hash: ns.hash}
+}
+
+func (ns *LocalNodeStore2) Get(k []byte) *Node {
+	val, ok := ns.dict.Get(string(k))
+	if ok {
+		return val.(*Node)
+	} else {
+		return nil
+	}
+}
+
+func (ns *LocalNodeStore2) Put(n *Node) (NodeStore2, []byte) {
+	wn := HashableNode(*n)
+	k := HashWritable(&wn, ns.hash)
+	return ns.withDict(ns.dict.Set(string(k), n)), k
+}
+
+func (ns *LocalNodeStore2) Remove(k []byte) NodeStore2 {
+	return ns.withDict(ns.dict.Delete(string(k)))
+}
+
+func (ns *LocalNodeStore2) Size() uint {
+	return uint(ns.dict.Len())
 }
 
 func FindMissingNodes(ns NodeStore, hash []byte) [][]byte {
