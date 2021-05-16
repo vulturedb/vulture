@@ -127,6 +127,9 @@ func NewIPFSMSTNodeStore(
 
 // TODO: Potentially change the node store interface to return errors and have the mst methods also
 // return errors. Panicing here is pretty dangerous since it's likely that stuff could go wrong.
+// TODO: The immutable interface is a little weird for an I/O based store like
+// IPFS. Figure out why this is and implement a way to have multiple references
+// to the IPFS store.
 
 func (s *IPFSMSTNodeStore) Get(k []byte) *mst.Node {
 	_, ndCid, err := cid.CidFromBytes(k)
@@ -153,7 +156,7 @@ func (s *IPFSMSTNodeStore) Get(k []byte) *mst.Node {
 	return mstNode
 }
 
-func (s *IPFSMSTNodeStore) Put(n *mst.Node) []byte {
+func (s *IPFSMSTNodeStore) Put(n *mst.Node) (mst.NodeStore2, []byte) {
 	nd, err := cbor.WrapObject(newIPFSMSTNode(n), s.multihashType, -1)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't wrap object: %s", err))
@@ -162,10 +165,10 @@ func (s *IPFSMSTNodeStore) Put(n *mst.Node) []byte {
 	if err != nil {
 		panic(fmt.Errorf("Couldn't add node: %s", err))
 	}
-	return nd.Cid().Bytes()
+	return s, nd.Cid().Bytes()
 }
 
-func (s *IPFSMSTNodeStore) Remove(k []byte) {
+func (s *IPFSMSTNodeStore) Remove(k []byte) mst.NodeStore2 {
 	_, ndCid, err := cid.CidFromBytes(k)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't create cid: %s", err))
@@ -174,10 +177,7 @@ func (s *IPFSMSTNodeStore) Remove(k []byte) {
 	if err != nil {
 		panic(fmt.Errorf("Couldn't remove node: %s", err))
 	}
-}
-
-func (s *IPFSMSTNodeStore) Copy() mst.NodeStore {
-	panic("Cannot call Copy on an IPFSMSTNodeStore")
+  return s
 }
 
 func (s *IPFSMSTNodeStore) Size() uint {
