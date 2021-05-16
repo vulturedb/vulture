@@ -7,14 +7,6 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-type NodeStore interface {
-	Get([]byte) *Node
-	Put(*Node) []byte
-	Remove([]byte)
-	Copy() NodeStore
-	Size() uint
-}
-
 // Only used for computing the hash for a given node
 type HashableNode Node
 
@@ -83,63 +75,27 @@ func (n *HashableNode) Write(w io.Writer) error {
 	return nil
 }
 
-type LocalNodeStore struct {
-	dict map[string]*Node
-	hash crypto.Hash
-}
-
-func NewLocalNodeStore(hash crypto.Hash) *LocalNodeStore {
-	return &LocalNodeStore{dict: map[string]*Node{}, hash: hash}
-}
-
-func (ns *LocalNodeStore) Get(k []byte) *Node {
-	return ns.dict[string(k)]
-}
-
-func (ns *LocalNodeStore) Put(n *Node) []byte {
-	wn := HashableNode(*n)
-	k := HashWritable(&wn, ns.hash)
-	ns.dict[string(k)] = n
-	return k
-}
-
-func (ns *LocalNodeStore) Remove(k []byte) {
-	delete(ns.dict, string(k))
-}
-
-func (ns *LocalNodeStore) Copy() NodeStore {
-	newDict := map[string]*Node{}
-	for k, v := range ns.dict {
-		newDict[k] = v
-	}
-	return &LocalNodeStore{newDict, ns.hash}
-}
-
-func (ns *LocalNodeStore) Size() uint {
-	return uint(len(ns.dict))
-}
-
-type NodeStore2 interface {
+type NodeStore interface {
 	Get([]byte) *Node
-	Put(*Node) (NodeStore2, []byte)
-	Remove([]byte) NodeStore2
+	Put(*Node) (NodeStore, []byte)
+	Remove([]byte) NodeStore
 	Size() uint
 }
 
-type LocalNodeStore2 struct {
+type LocalNodeStore struct {
 	dict *immutable.Map
 	hash crypto.Hash
 }
 
-func NewLocalNodeStore2(hash crypto.Hash) *LocalNodeStore2 {
-	return &LocalNodeStore2{dict: immutable.NewMap(nil), hash: hash}
+func NewLocalNodeStore(hash crypto.Hash) NodeStore {
+	return &LocalNodeStore{dict: immutable.NewMap(nil), hash: hash}
 }
 
-func (ns *LocalNodeStore2) withDict(dict *immutable.Map) NodeStore2 {
-	return &LocalNodeStore2{dict: dict, hash: ns.hash}
+func (ns *LocalNodeStore) withDict(dict *immutable.Map) NodeStore {
+	return &LocalNodeStore{dict: dict, hash: ns.hash}
 }
 
-func (ns *LocalNodeStore2) Get(k []byte) *Node {
+func (ns *LocalNodeStore) Get(k []byte) *Node {
 	val, ok := ns.dict.Get(string(k))
 	if ok {
 		return val.(*Node)
@@ -148,17 +104,17 @@ func (ns *LocalNodeStore2) Get(k []byte) *Node {
 	}
 }
 
-func (ns *LocalNodeStore2) Put(n *Node) (NodeStore2, []byte) {
+func (ns *LocalNodeStore) Put(n *Node) (NodeStore, []byte) {
 	wn := HashableNode(*n)
 	k := HashWritable(&wn, ns.hash)
 	return ns.withDict(ns.dict.Set(string(k), n)), k
 }
 
-func (ns *LocalNodeStore2) Remove(k []byte) NodeStore2 {
+func (ns *LocalNodeStore) Remove(k []byte) NodeStore {
 	return ns.withDict(ns.dict.Delete(string(k)))
 }
 
-func (ns *LocalNodeStore2) Size() uint {
+func (ns *LocalNodeStore) Size() uint {
 	return uint(ns.dict.Len())
 }
 

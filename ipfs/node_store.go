@@ -121,7 +121,7 @@ func NewIPFSMSTNodeStore(
 	multihashType uint64,
 	keyReader MSTKeyReader,
 	valReader MSTValueReader,
-) *IPFSMSTNodeStore {
+) mst.NodeStore {
 	return &IPFSMSTNodeStore{ctx, dagService, multihashType, keyReader, valReader}
 }
 
@@ -156,7 +156,7 @@ func (s *IPFSMSTNodeStore) Get(k []byte) *mst.Node {
 	return mstNode
 }
 
-func (s *IPFSMSTNodeStore) Put(n *mst.Node) (mst.NodeStore2, []byte) {
+func (s *IPFSMSTNodeStore) Put(n *mst.Node) (mst.NodeStore, []byte) {
 	nd, err := cbor.WrapObject(newIPFSMSTNode(n), s.multihashType, -1)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't wrap object: %s", err))
@@ -168,7 +168,7 @@ func (s *IPFSMSTNodeStore) Put(n *mst.Node) (mst.NodeStore2, []byte) {
 	return s, nd.Cid().Bytes()
 }
 
-func (s *IPFSMSTNodeStore) Remove(k []byte) mst.NodeStore2 {
+func (s *IPFSMSTNodeStore) Remove(k []byte) mst.NodeStore {
 	_, ndCid, err := cid.CidFromBytes(k)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't create cid: %s", err))

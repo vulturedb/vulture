@@ -11,7 +11,7 @@ type MerkleSearchTree struct {
 	root  []byte
 	base  Base
 	hash  crypto.Hash
-	store NodeStore2
+	store NodeStore
 }
 
 func NewLocalMST(base Base, hash crypto.Hash) *MerkleSearchTree {
@@ -19,11 +19,11 @@ func NewLocalMST(base Base, hash crypto.Hash) *MerkleSearchTree {
 		root:  nil,
 		base:  base,
 		hash:  hash,
-		store: NewLocalNodeStore2(hash),
+		store: NewLocalNodeStore(hash),
 	}
 }
 
-func NewMSTWithRoot(root []byte, base Base, hash crypto.Hash, store NodeStore2) *MerkleSearchTree {
+func NewMSTWithRoot(root []byte, base Base, hash crypto.Hash, store NodeStore) *MerkleSearchTree {
 	return &MerkleSearchTree{
 		root:  root,
 		base:  base,
@@ -32,11 +32,11 @@ func NewMSTWithRoot(root []byte, base Base, hash crypto.Hash, store NodeStore2) 
 	}
 }
 
-func NewMST(base Base, hash crypto.Hash, store NodeStore2) *MerkleSearchTree {
+func NewMST(base Base, hash crypto.Hash, store NodeStore) *MerkleSearchTree {
 	return NewMSTWithRoot(nil, base, hash, store)
 }
 
-func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore2) *Node {
+func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *Node {
 	res := t.store.Get(hash)
 	if res == nil {
 		res = store.Get(hash)
@@ -46,10 +46,10 @@ func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore2) *Node {
 
 // Gets nodes from t.store but modifies store
 func (t *MerkleSearchTree) splitInto(
-	store NodeStore2,
+	store NodeStore,
 	nodeHash []byte,
 	key Key,
-) (NodeStore2, []byte, []byte) {
+) (NodeStore, []byte, []byte) {
 	if nodeHash == nil {
 		return store, nil, nil
 	}
@@ -90,10 +90,10 @@ func (t *MerkleSearchTree) splitInto(
 }
 
 func (t *MerkleSearchTree) split(
-	store NodeStore2,
+	store NodeStore,
 	nodeHash []byte,
 	key Key,
-) (NodeStore2, []byte, []byte) {
+) (NodeStore, []byte, []byte) {
 	return t.splitInto(store, nodeHash, key)
 }
 
@@ -102,12 +102,12 @@ func (t *MerkleSearchTree) leadingZeros(key Key) uint32 {
 }
 
 func (t *MerkleSearchTree) put(
-	store NodeStore2,
+	store NodeStore,
 	nodeHash []byte,
 	key Key,
 	val Value,
 	atLevel uint32,
-) (NodeStore2, []byte) {
+) (NodeStore, []byte) {
 	var newNode *Node = nil
 	if nodeHash == nil {
 		newNode = &Node{
@@ -166,10 +166,10 @@ func (t *MerkleSearchTree) get(nodeHash []byte, key Key) Value {
 
 func (t *MerkleSearchTree) merge(
 	with *MerkleSearchTree,
-	store NodeStore2,
+	store NodeStore,
 	l []byte,
 	r []byte,
-) (NodeStore2, []byte) {
+) (NodeStore, []byte) {
 	if l == nil && r != nil {
 		// Recursively insert entire subtree into store
 		rNode := with.store.Get(r)
@@ -298,7 +298,7 @@ func (t *MerkleSearchTree) numNodes(n []byte) uint {
 	return nNodes + 1
 }
 
-func (t *MerkleSearchTree) withStoreAndRoot(store NodeStore2, root []byte) *MerkleSearchTree {
+func (t *MerkleSearchTree) withStoreAndRoot(store NodeStore, root []byte) *MerkleSearchTree {
 	return &MerkleSearchTree{
 		root:  root,
 		base:  t.base,

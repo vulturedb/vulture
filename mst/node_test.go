@@ -16,8 +16,8 @@ func TestFindMissingNodesEmpty(t *testing.T) {
 func TestFindMissingNodesSomeChildren(t *testing.T) {
 	ns := NewLocalNodeStore(crypto.SHA256)
 	nChild := &Node{0, nil, []Child{{UInt32(1), UInt32(2), []byte{1, 2, 3}}}}
-	hChild := ns.Put(nChild)
+	ns, hChild := ns.Put(nChild)
 	nRoot := &Node{1, []byte{2, 3, 4}, []Child{{UInt32(3), UInt32(4), hChild}}}
-	hRoot := ns.Put(nRoot)
+	ns, hRoot := ns.Put(nRoot)
 	assert.Equal(t, [][]byte{{2, 3, 4}, {1, 2, 3}}, FindMissingNodes(ns, hRoot))
 }
