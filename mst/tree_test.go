@@ -112,8 +112,8 @@ func TestMSTMergeConsecutive(t *testing.T) {
 	lInd := NewLocalMST(Base32, crypto.SHA256)
 	rInd := NewLocalMST(Base32, crypto.SHA256)
 	for i := 0; i < 50; i++ {
-		lInd.Put(UInt32(i), UInt32(i))
-		rInd.Put(UInt32(i+25), UInt32(i+50))
+		lInd = lInd.Put(UInt32(i), UInt32(i))
+		rInd = rInd.Put(UInt32(i+25), UInt32(i+50))
 	}
 
 	mInd, err := lInd.Merge(rInd)
@@ -173,5 +173,5 @@ func TestMSTMergeDiffHash(t *testing.T) {
 	rInd := NewLocalMST(Base32, crypto.SHA256)
 	_, err := lInd.Merge(rInd)
 	assert.Error(t, err)
-	assert.Equal(t, "Mismatching hash functions. 7 vs 5", err.Error())
+	assert.Equal(t, "Mismatching hash functions. SHA-512 vs SHA-256", err.Error())
 }
