@@ -53,6 +53,17 @@ func (s *MSTServer) gossip(ctx context.Context, rootHash []byte) {
 	}
 }
 
+func (s *MSTServer) createEndRoundFunc(peer Peer) EndRoundFunc {
+	return func() {
+		s.antiEntropyRoundsLock.Lock()
+		defer s.antiEntropyRoundsLock.Unlock()
+		_, hasRound := s.antiEntropyRounds[peer]
+		if hasRound {
+			delete(s.antiEntropyRounds, peer)
+		}
+	}
+}
+
 // Get returns the value for a given key
 func (s *MSTServer) Get(ctx context.Context, in *rpc.MSTGetRequest) (*rpc.MSTGetResponse, error) {
 	key := in.GetKey()
@@ -69,7 +80,6 @@ func (s *MSTServer) Get(ctx context.Context, in *rpc.MSTGetRequest) (*rpc.MSTGet
 }
 
 func (s *MSTServer) runAntiEntropy() {
-	// TODO: This should lock the rounds completely instead of per peer.
 	peers := s.peers.Select()
 	rounds := make([]AntiEntropyRound, 0)
 	s.antiEntropyRoundsLock.Lock()
@@ -83,7 +93,7 @@ func (s *MSTServer) runAntiEntropy() {
 	}
 	s.antiEntropyRoundsLock.Unlock()
 	for _, round := range rounds {
-		go round.runRound()
+		go round.runRound(s.createEndRoundFunc(round.peer))
 	}
 }
 

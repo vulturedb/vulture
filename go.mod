@@ -3,9 +3,10 @@ module github.com/vulturedb/vulture
 go 1.14
 
 require (
-  github.com/benbjohnson/immutable v0.3.0
+	github.com/benbjohnson/immutable v0.3.0
 	github.com/fd/go-nat v1.0.0 // indirect
 	github.com/golang/protobuf v1.4.2
+	github.com/google/uuid v1.2.0
 	github.com/gxed/pubsub v0.0.0-20180201040156-26ebdf44f824 // indirect
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-ipfs v0.8.0
