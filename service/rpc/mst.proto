@@ -36,19 +36,21 @@ service MSTService {
   rpc Get(MSTGetRequest) returns (MSTGetResponse) {}
 }
 
-message MSTGossipRequest {
-  bytes root_hash = 1;
+message MSTRoundStartRequest {
+  bytes round_uuid = 1;
+  bytes root_hash = 2;
 }
 
-message MSTGetNodesRequest {
+message MSTRoundStepRequest {
+  bytes round_uuid = 1;
+  repeated MSTNode nodes = 2;
+}
+
+message MSTRoundStepResponse {
   repeated bytes hashes = 1;
 }
 
-message MSTGetNodesResponse {
-  repeated MSTNode nodes = 1;
-}
-
 service MSTManagerService {
-  rpc Gossip(MSTGossipRequest) returns (google.protobuf.Empty) {}
-  rpc GetNodes(MSTGetNodesRequest) returns (MSTGetNodesResponse) {}
+  rpc RoundStart(MSTRoundStartRequest) returns (MSTRoundStepResponse) {}
+  rpc RoundStep(MSTRoundStepRequest) returns (MSTRoundStepResponse) {}
 }

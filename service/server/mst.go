@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"log"
 	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
 
 	"github.com/vulturedb/vulture/mst"
 	"github.com/vulturedb/vulture/service/rpc"
@@ -33,24 +31,6 @@ func (s *MSTServer) getTree() *mst.MerkleSearchTree {
 	s.treeLock.RLock()
 	defer s.treeLock.RUnlock()
 	return s.tree
-}
-
-func (s *MSTServer) gossip(ctx context.Context, rootHash []byte) {
-	peers := s.peers.Select()
-	for _, peer := range peers {
-		// TODO: should keep these connections around to save on round-trips, maybe there's a connection
-		// pool library we can use.
-		address := fmt.Sprintf("%s:%d", peer.Hostname, peer.Port)
-		conn, err := grpc.Dial(address, grpc.WithInsecure())
-		if err != nil {
-			log.Printf("Error connecting to %s when gossiping: %s", address, err)
-		}
-		client := rpc.NewMSTManagerServiceClient(conn)
-		_, err = client.Gossip(ctx, &rpc.MSTGossipRequest{RootHash: rootHash})
-		if err != nil {
-			log.Printf("Error gossiping to %s: %s", address, err)
-		}
-	}
 }
 
 func (s *MSTServer) createEndRoundFunc(peer Peer) EndRoundFunc {
@@ -122,20 +102,19 @@ func NewMSTManagerServer() *MSTManagerServer {
 	return &MSTManagerServer{}
 }
 
-// Gossip defines the handler for the Gossip endpoint of the Vulture management
-// server
-func (s *MSTManagerServer) Gossip(
+// RoundStart starts a round of anti entropy
+func (s *MSTManagerServer) RoundStart(
 	ctx context.Context,
-	in *rpc.MSTGossipRequest,
-) (*empty.Empty, error) {
+	in *rpc.MSTRoundStartRequest,
+) (*rpc.MSTRoundStepResponse, error) {
 	log.Printf("Received gossip for %s", hex.EncodeToString(in.GetRootHash()))
-	return &empty.Empty{}, nil
+	return &rpc.MSTRoundStepResponse{Hashes: make([][]byte, 0)}, nil
 }
 
-// GetNodes returns the nodes from the local tree
-func (s *MSTManagerServer) GetNodes(
+// RoundStep does a step of anti entropy
+func (s *MSTManagerServer) RoundStep(
 	ctx context.Context,
-	in *rpc.MSTGetNodesRequest,
-) (*rpc.MSTGetNodesResponse, error) {
-	return nil, nil
+	in *rpc.MSTRoundStepRequest,
+) (*rpc.MSTRoundStepResponse, error) {
+	return &rpc.MSTRoundStepResponse{Hashes: make([][]byte, 0)}, nil
 }

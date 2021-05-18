@@ -40,6 +40,10 @@ func NewAntiEntropyRound(peer Peer, tree *mst.MerkleSearchTree) AntiEntropyRound
 func (r AntiEntropyRound) runRound(endRoundFunc EndRoundFunc) {
 	address := fmt.Sprintf("%s:%d", r.peer.Hostname, r.peer.Port)
 	rootHash := r.tree.RootHash()
+	roundUUIDBytes, err := r.roundUUID.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Error connecting to %s when gossiping: %s", address, err)
@@ -47,11 +51,15 @@ func (r AntiEntropyRound) runRound(endRoundFunc EndRoundFunc) {
 		return
 	}
 	client := rpc.NewMSTManagerServiceClient(conn)
-	_, err = client.Gossip(r.ctx, &rpc.MSTGossipRequest{RootHash: rootHash})
+	res, err := client.RoundStart(r.ctx, &rpc.MSTRoundStartRequest{RootHash: rootHash, RoundUuid: roundUUIDBytes})
 	if err != nil {
-		log.Printf("Error gossiping to %s: %s", address, err)
+		log.Printf("Error starting round to %s: %s", address, err)
 		endRoundFunc()
 		return
+	}
+	hashes := res.GetHashes()
+	for len(hashes) > 0 {
+
 	}
 	endRoundFunc()
 }
