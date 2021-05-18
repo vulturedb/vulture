@@ -1,0 +1,7 @@
+version: "3.8"
+
+services:
+  vulture-server:
+    image: vulture
+    ports:
+      - 6667:6667

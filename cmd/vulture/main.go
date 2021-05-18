@@ -30,7 +30,7 @@ func (kr UInt32ValueReader) FromBytes(b []byte) (mst.Value, error) {
 	return mst.UInt32(binary.LittleEndian.Uint32(b)), nil
 }
 
-var host = flag.String("host", "localhost", "post to serve API for")
+var host = flag.String("host", "0.0.0.0", "post to serve API for")
 var port = flag.Int("port", 6667, "port to serve API on")
 
 // Temporary

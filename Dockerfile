@@ -1,9 +1,16 @@
-FROM golang:1.15
+FROM golang:1.15-alpine AS build
 
-WORKDIR /go/src/app
+WORKDIR /src
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
 COPY . .
 
-RUN go install -v ./...
+RUN CGO_ENABLED=0 go build -o /bin/vulture ./cmd/vulture
 
-EXPOSE 6667
-CMD ["vulture"]
+FROM scratch
+COPY --from=build /bin/vulture /
+CMD ["/vulture"]
