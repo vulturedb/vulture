@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	// "context"
 	"crypto"
 	"encoding/binary"
 	"flag"
@@ -9,10 +9,10 @@ import (
 	"log"
 	"net"
 
-	mh "github.com/multiformats/go-multihash"
+	// mh "github.com/multiformats/go-multihash"
 	"google.golang.org/grpc"
 
-	"github.com/vulturedb/vulture/ipfs"
+	// "github.com/vulturedb/vulture/ipfs"
 	"github.com/vulturedb/vulture/mst"
 	"github.com/vulturedb/vulture/service/rpc"
 	"github.com/vulturedb/vulture/service/server"
@@ -41,22 +41,16 @@ func main() {
 	flag.Parse()
 
 	// Create the MST and the MST Server
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
 
-	coreAPI, err := ipfs.SpawnDefault(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create ipfs node: %v", err)
-	}
-	log.Printf("IPFS node is running")
-	ipfs.RegisterTypes()
-	store := ipfs.NewIPFSMSTNodeStore(
-		ctx,
-		coreAPI.Dag(),
-		mh.SHA2_256,
-		UInt32KeyReader{},
-		UInt32ValueReader{},
-	)
+	// coreAPI, err := ipfs.SpawnDefault(ctx)
+	// if err != nil {
+	// 	log.Fatalf("Failed to create ipfs node: %v", err)
+	// }
+	// log.Printf("IPFS node is running")
+	// ipfs.RegisterTypes()
+	store := mst.NewLocalNodeStore(crypto.SHA256)
 	tree := mst.NewMST(mst.Base16, crypto.SHA256, store)
 	peers := server.NewPeers(&server.SelectAll{})
 	peers.Add(*otherHost, *otherPort)
