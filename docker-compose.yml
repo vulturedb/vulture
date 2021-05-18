@@ -1,7 +1,15 @@
 version: "3.8"
 
 services:
-  vulture-server:
+  vulture-server-1:
+    build: .
     image: vulture
+    command: /vulture -port 6667 -other-host vulture-server-2 -other-port 6668
     ports:
       - 6667:6667
+  vulture-server-2:
+    build: .
+    image: vulture
+    command: /vulture -port 6668 -other-host vulture-server-1 -other-port 6667
+    ports:
+      - 6668:6668
