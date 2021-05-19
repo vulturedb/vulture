@@ -36,6 +36,28 @@ func NewMST(base Base, hash crypto.Hash, store NodeStore) *MerkleSearchTree {
 	return NewMSTWithRoot(nil, base, hash, store)
 }
 
+func (t *MerkleSearchTree) NodeStore() NodeStore {
+	return t.store
+}
+
+func (t *MerkleSearchTree) WithNodeStore(store NodeStore) *MerkleSearchTree {
+	return &MerkleSearchTree{
+		root:  t.root,
+		base:  t.base,
+		hash:  t.hash,
+		store: store,
+	}
+}
+
+func (t *MerkleSearchTree) WithRoot(root []byte) *MerkleSearchTree {
+	return &MerkleSearchTree{
+		root:  root,
+		base:  t.base,
+		hash:  t.hash,
+		store: t.store,
+	}
+}
+
 func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *Node {
 	res := t.store.Get(hash)
 	if res == nil {

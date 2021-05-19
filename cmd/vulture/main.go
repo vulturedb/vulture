@@ -55,6 +55,11 @@ func main() {
 	peers := server.NewPeers(&server.SelectAll{})
 	peers.Add(*otherHost, *otherPort)
 	mstServer := server.NewMSTServer(tree, peers)
+	managerServer := server.NewMSTManagerServer(
+		mstServer,
+		UInt32KeyReader{},
+		UInt32ValueReader{},
+	)
 
 	// Start the grpc server
 	address := fmt.Sprintf("%s:%d", *host, *port)
@@ -66,7 +71,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	rpc.RegisterMSTServiceServer(grpcServer, mstServer)
-	rpc.RegisterMSTManagerServiceServer(grpcServer, server.NewMSTManagerServer())
+	rpc.RegisterMSTManagerServiceServer(grpcServer, managerServer)
 	err = grpcServer.Serve(lis)
 	if err != nil {
 		log.Fatalf("Failed to serve: %v", err)

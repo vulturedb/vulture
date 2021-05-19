@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 
 	"github.com/vulturedb/vulture/mst"
 	"github.com/vulturedb/vulture/service/rpc"
@@ -31,6 +33,17 @@ func (s *MSTServer) getTree() *mst.MerkleSearchTree {
 	s.treeLock.RLock()
 	defer s.treeLock.RUnlock()
 	return s.tree
+}
+
+func (s *MSTServer) mergeTree(tree *mst.MerkleSearchTree) {
+	log.Printf("Merging tree")
+	s.treeLock.Lock()
+	defer s.treeLock.Unlock()
+	tree, err := s.tree.Merge(tree)
+	if err != nil {
+		panic(err)
+	}
+	s.tree = tree
 }
 
 func (s *MSTServer) createEndRoundFunc(peer Peer) EndRoundFunc {
@@ -93,13 +106,49 @@ func (s *MSTServer) Put(ctx context.Context, in *rpc.MSTPutRequest) (*empty.Empt
 	return &empty.Empty{}, nil
 }
 
+type antiEntropyDestRound struct {
+	tree     *mst.MerkleSearchTree
+	rootHash []byte
+}
+
 // MSTManagerServer stores data required for managing the Vulture server
+// TODO: right now we don't do any cleanup of destination rounds, so there may
+// be a memory leak if we have stray rounds. We could include a garbage
+// collection round at some point here.
 type MSTManagerServer struct {
+	server                    *MSTServer
+	kr                        mst.KeyReader
+	vr                        mst.ValueReader
+	antiEntropyDestRounds     map[uuid.UUID]antiEntropyDestRound
+	antiEntropyDestRoundsLock sync.RWMutex
 }
 
 // NewMSTManagerServer creates a new Vulture management server
-func NewMSTManagerServer() *MSTManagerServer {
-	return &MSTManagerServer{}
+func NewMSTManagerServer(
+	server *MSTServer,
+	kr mst.KeyReader,
+	vr mst.ValueReader,
+) *MSTManagerServer {
+	return &MSTManagerServer{
+		server:                server,
+		kr:                    kr,
+		vr:                    vr,
+		antiEntropyDestRounds: make(map[uuid.UUID]antiEntropyDestRound),
+	}
+}
+
+func (s *MSTManagerServer) getMissingHashes(
+	roundUUID uuid.UUID,
+	round antiEntropyDestRound,
+) *rpc.MSTRoundStepResponse {
+	hashes := mst.FindMissingNodes(round.tree.NodeStore(), round.rootHash)
+	if len(hashes) == 0 {
+		s.antiEntropyDestRoundsLock.Lock()
+		delete(s.antiEntropyDestRounds, roundUUID)
+		s.antiEntropyDestRoundsLock.Unlock()
+		s.server.mergeTree(round.tree)
+	}
+	return &rpc.MSTRoundStepResponse{Hashes: hashes}
 }
 
 // RoundStart starts a round of anti entropy
@@ -107,8 +156,48 @@ func (s *MSTManagerServer) RoundStart(
 	ctx context.Context,
 	in *rpc.MSTRoundStartRequest,
 ) (*rpc.MSTRoundStepResponse, error) {
-	log.Printf("Received gossip for %s", hex.EncodeToString(in.GetRootHash()))
-	return &rpc.MSTRoundStepResponse{Hashes: make([][]byte, 0)}, nil
+	rootHash := in.GetRootHash()
+	roundUUID, err := uuid.FromBytes(in.GetRoundUuid())
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the round on the destination side
+	tree := s.server.getTree().WithRoot(rootHash)
+	round := antiEntropyDestRound{tree, rootHash}
+	s.antiEntropyDestRoundsLock.Lock()
+	s.antiEntropyDestRounds[roundUUID] = round
+	s.antiEntropyDestRoundsLock.Unlock()
+
+	log.Printf(
+		"Starting round for %s with roundUUID %s",
+		hex.EncodeToString(rootHash),
+		roundUUID.String(),
+	)
+	return s.getMissingHashes(roundUUID, round), nil
+}
+
+func (s *MSTManagerServer) updateNodes(
+	roundUUID uuid.UUID,
+	nodes []*mst.Node,
+) (antiEntropyDestRound, error) {
+	// This locks for a long time, so maybe find a way to have more granular
+	// locks.
+	s.antiEntropyDestRoundsLock.Lock()
+	defer s.antiEntropyDestRoundsLock.Unlock()
+	if _, exists := s.antiEntropyDestRounds[roundUUID]; !exists {
+		return antiEntropyDestRound{}, errors.Errorf("Missing tree for round %s", roundUUID.String())
+	}
+	round := s.antiEntropyDestRounds[roundUUID]
+	tree := round.tree
+	store := tree.NodeStore()
+	for _, node := range nodes {
+		store, _ = store.Put(node)
+	}
+	tree = tree.WithNodeStore(store)
+	round = antiEntropyDestRound{tree, round.rootHash}
+	s.antiEntropyDestRounds[roundUUID] = round
+	return round, nil
 }
 
 // RoundStep does a step of anti entropy
@@ -116,5 +205,31 @@ func (s *MSTManagerServer) RoundStep(
 	ctx context.Context,
 	in *rpc.MSTRoundStepRequest,
 ) (*rpc.MSTRoundStepResponse, error) {
-	return &rpc.MSTRoundStepResponse{Hashes: make([][]byte, 0)}, nil
+	roundUUID, err := uuid.FromBytes(in.GetRoundUuid())
+	if err != nil {
+		return nil, err
+	}
+
+	rpcNodes := in.GetNodes()
+	mstNodes := make([]*mst.Node, 0, len(rpcNodes))
+	for _, rpcNode := range rpcNodes {
+		mstNode, err := nodeFromRPC(rpcNode, s.kr, s.vr)
+		if err != nil {
+			return nil, err
+		}
+		mstNodes = append(mstNodes, mstNode)
+	}
+
+	round, err := s.updateNodes(roundUUID, mstNodes)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf(
+		"Stepping round for %s with roundUUID %s",
+		hex.EncodeToString(round.rootHash),
+		roundUUID.String(),
+	)
+
+	return s.getMissingHashes(roundUUID, round), nil
 }

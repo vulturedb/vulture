@@ -28,8 +28,8 @@ func childToRPC(child mst.Child) *rpc.MSTChild {
 	}
 }
 
-// NodeToRPC converts a native mst.Node type into the transport layer
-func NodeToRPC(node *mst.Node) *rpc.MSTNode {
+// nodeToRPC converts a native mst.Node type into the transport layer
+func nodeToRPC(node *mst.Node) *rpc.MSTNode {
 	children := node.Children()
 	rpcChildren := make([]*rpc.MSTChild, 0, len(children))
 	for _, child := range children {
@@ -54,8 +54,8 @@ func childFromRPC(child *rpc.MSTChild, kr mst.KeyReader, vr mst.ValueReader) (ms
 	return mst.NewChild(k, v, child.GetHigh()), nil
 }
 
-// NodeFromRPC creates a native mst.Node type from the transport layer
-func NodeFromRPC(node *rpc.MSTNode, kr mst.KeyReader, vr mst.ValueReader) (*mst.Node, error) {
+// nodeFromRPC creates a native mst.Node type from the transport layer
+func nodeFromRPC(node *rpc.MSTNode, kr mst.KeyReader, vr mst.ValueReader) (*mst.Node, error) {
 	children := node.GetChildren()
 	mstChildren := make([]mst.Child, 0, len(children))
 	for _, child := range children {
