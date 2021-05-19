@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -36,14 +37,30 @@ func (s *MSTServer) getTree() *mst.MerkleSearchTree {
 }
 
 func (s *MSTServer) mergeTree(tree *mst.MerkleSearchTree) {
-	log.Printf("Merging tree")
 	s.treeLock.Lock()
 	defer s.treeLock.Unlock()
-	tree, err := s.tree.Merge(tree)
+	newTree, err := s.tree.Merge(tree)
 	if err != nil {
 		panic(err)
 	}
-	s.tree = tree
+	// s.tree.PrintInOrder()
+	// newTree.PrintInOrder()
+	oldStoreSize := s.tree.NodeStore().Size()
+	oldSize := s.tree.NumNodes()
+	rightStoreSize := tree.NodeStore().Size()
+	rightSize := tree.NumNodes()
+	newStoreSize := newTree.NodeStore().Size()
+	newSize := newTree.NumNodes()
+	log.Printf(
+		"Merging tree from (tree: %d, store: %d) and (tree: %d, store: %d) to (tree: %d, store: %d)",
+		oldSize,
+		oldStoreSize,
+		rightSize,
+		rightStoreSize,
+		newSize,
+		newStoreSize,
+	)
+	s.tree = newTree
 }
 
 func (s *MSTServer) createEndRoundFunc(peer Peer) EndRoundFunc {
@@ -186,14 +203,18 @@ func (s *MSTManagerServer) updateNodes(
 	s.antiEntropyDestRoundsLock.Lock()
 	defer s.antiEntropyDestRoundsLock.Unlock()
 	if _, exists := s.antiEntropyDestRounds[roundUUID]; !exists {
-		return antiEntropyDestRound{}, errors.Errorf("Missing tree for round %s", roundUUID.String())
+		return antiEntropyDestRound{}, errors.Errorf("Missing round %s", roundUUID.String())
 	}
 	round := s.antiEntropyDestRounds[roundUUID]
 	tree := round.tree
 	store := tree.NodeStore()
+	hashStrs := make([]string, 0, len(nodes))
 	for _, node := range nodes {
-		store, _ = store.Put(node)
+		var hash []byte
+		store, hash = store.Put(node)
+		hashStrs = append(hashStrs, hex.EncodeToString(hash))
 	}
+	log.Printf("Added nodes with hashes: %s", strings.Join(hashStrs, ", "))
 	tree = tree.WithNodeStore(store)
 	round = antiEntropyDestRound{tree, round.rootHash}
 	s.antiEntropyDestRounds[roundUUID] = round

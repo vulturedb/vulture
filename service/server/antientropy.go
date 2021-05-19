@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -71,13 +72,16 @@ func (r AntiEntropyRound) runRound(endRoundFunc EndRoundFunc) {
 	hashes := res.GetHashes()
 	for len(hashes) > 0 {
 		rpcNodes := make([]*rpc.MSTNode, 0, len(hashes))
+		hashStrs := make([]string, 0, len(hashes))
 		for _, hash := range hashes {
 			node := store.Get(hash)
 			if node == nil {
 				panic(fmt.Sprintf("Missing node for hash %s", hex.EncodeToString(hash)))
 			}
 			rpcNodes = append(rpcNodes, nodeToRPC(node))
+			hashStrs = append(hashStrs, hex.EncodeToString(hash))
 		}
+		log.Printf("Sending nodes for hashes: %s", strings.Join(hashStrs, ", "))
 		res, err := client.RoundStep(r.ctx, &rpc.MSTRoundStepRequest{
 			RoundUuid: roundUUIDBytes,
 			Nodes:     rpcNodes,
