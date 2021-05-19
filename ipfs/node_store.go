@@ -13,14 +13,6 @@ import (
 	"github.com/vulturedb/vulture/mst"
 )
 
-type MSTKeyReader interface {
-	FromBytes([]byte) (mst.Key, error)
-}
-
-type MSTValueReader interface {
-	FromBytes([]byte) (mst.Value, error)
-}
-
 func hashToLink(hash []byte) (*node.Link, error) {
 	if hash == nil {
 		return nil, nil
@@ -64,7 +56,7 @@ func newIPFSMSTChild(c mst.Child) iPFSMSTChild {
 	return iPFSMSTChild{keyBuf.Bytes(), valBuf.Bytes(), high}
 }
 
-func (c iPFSMSTChild) toMSTChild(kr MSTKeyReader, vr MSTValueReader) (mst.Child, error) {
+func (c iPFSMSTChild) toMSTChild(kr mst.KeyReader, vr mst.ValueReader) (mst.Child, error) {
 	k, err := kr.FromBytes(c.Key)
 	if err != nil {
 		return mst.Child{}, err
@@ -95,7 +87,7 @@ func newIPFSMSTNode(n *mst.Node) *iPFSMSTNode {
 	return &iPFSMSTNode{n.Level(), low, children}
 }
 
-func (n *iPFSMSTNode) toMSTNode(kr MSTKeyReader, vr MSTValueReader) (*mst.Node, error) {
+func (n *iPFSMSTNode) toMSTNode(kr mst.KeyReader, vr mst.ValueReader) (*mst.Node, error) {
 	children := make([]mst.Child, len(n.Children))
 	for i, nChild := range n.Children {
 		var err error
@@ -111,16 +103,16 @@ type IPFSMSTNodeStore struct {
 	ctx           context.Context
 	dagService    icore.APIDagService
 	multihashType uint64
-	keyReader     MSTKeyReader
-	valReader     MSTValueReader
+	keyReader     mst.KeyReader
+	valReader     mst.ValueReader
 }
 
 func NewIPFSMSTNodeStore(
 	ctx context.Context,
 	dagService icore.APIDagService,
 	multihashType uint64,
-	keyReader MSTKeyReader,
-	valReader MSTValueReader,
+	keyReader mst.KeyReader,
+	valReader mst.ValueReader,
 ) mst.NodeStore {
 	return &IPFSMSTNodeStore{ctx, dagService, multihashType, keyReader, valReader}
 }
@@ -177,7 +169,7 @@ func (s *IPFSMSTNodeStore) Remove(k []byte) mst.NodeStore {
 	if err != nil {
 		panic(fmt.Errorf("Couldn't remove node: %s", err))
 	}
-  return s
+	return s
 }
 
 func (s *IPFSMSTNodeStore) Size() uint {

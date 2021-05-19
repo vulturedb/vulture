@@ -14,6 +14,14 @@ type Value interface {
 	Merge(with Value) Value
 }
 
+type KeyReader interface {
+	FromBytes([]byte) (Key, error)
+}
+
+type ValueReader interface {
+	FromBytes([]byte) (Value, error)
+}
+
 func keysEqual(k1 Key, k2 Key) bool {
 	return !k1.Less(k2) && !k2.Less(k1)
 }
