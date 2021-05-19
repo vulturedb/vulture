@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -39,12 +40,14 @@ func (s *MSTServer) getTree() *mst.MerkleSearchTree {
 func (s *MSTServer) mergeTree(tree *mst.MerkleSearchTree) {
 	s.treeLock.Lock()
 	defer s.treeLock.Unlock()
+	fmt.Println("Left:")
+	s.tree.PrintInOrder()
+	fmt.Println("Right:")
+	tree.PrintInOrder()
 	newTree, err := s.tree.Merge(tree)
 	if err != nil {
 		panic(err)
 	}
-	// s.tree.PrintInOrder()
-	// newTree.PrintInOrder()
 	oldStoreSize := s.tree.NodeStore().Size()
 	oldSize := s.tree.NumNodes()
 	rightStoreSize := tree.NodeStore().Size()
