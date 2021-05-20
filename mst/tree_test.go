@@ -107,19 +107,30 @@ func TestMSTMergeBase2(t *testing.T) {
 	mergeRunner(t, Base2, 50, 1000, 100)
 }
 
+// TODO: Need a more comprehensive test for this
 func TestMSTMergeAnecdotal(t *testing.T) {
 	// Found a bug in a specific case
 	lInd := NewLocalMST(Base16, crypto.SHA256)
 	rInd := NewLocalMST(Base16, crypto.SHA256)
-	for i := 0; i < 16; i++ {
+	for i := 0; i < 437; i++ {
 		lInd = lInd.Put(UInt32(i), UInt32(i+25))
 		rInd = rInd.Put(UInt32(i), UInt32(i+25))
 	}
-	for i := 16; i < 18; i++ {
+	for i := 437; i < 443; i++ {
 		rInd = rInd.Put(UInt32(i), UInt32(i+25))
 	}
 	mInd, err := lInd.Merge(rInd)
 	assert.NoError(t, err)
+
+	// fmt.Println("left:")
+	// fmt.Printf("%d\n", lInd.store.Size())
+	// lInd.PrintInOrder()
+	// fmt.Println("right:")
+	// fmt.Printf("%d\n", rInd.store.Size())
+	// rInd.PrintInOrder()
+	// fmt.Println("mid:")
+	// fmt.Printf("%d\n", mInd.store.Size())
+	// mInd.PrintInOrder()
 
 	assert.Equal(t, lInd.store.Size(), lInd.NumNodes())
 	assert.Equal(t, rInd.store.Size(), rInd.NumNodes())

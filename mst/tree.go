@@ -3,6 +3,7 @@ package mst
 import (
 	"bytes"
 	"crypto"
+	"encoding/hex"
 	"fmt"
 	"strings"
 )
@@ -67,7 +68,7 @@ func (t *MerkleSearchTree) getNodeMaybe(hash []byte, store NodeStore) *Node {
 }
 
 // Gets nodes from t.store but modifies store
-func (t *MerkleSearchTree) splitInto(
+func (t *MerkleSearchTree) split(
 	store NodeStore,
 	nodeHash []byte,
 	key Key,
@@ -85,7 +86,7 @@ func (t *MerkleSearchTree) splitInto(
 	rChildren := make([]Child, uint(len(n.children))-i)
 	copy(lChildren, n.children[:i])
 	copy(rChildren, n.children[i:])
-	store, l, r := t.splitInto(store, child, key)
+	store, l, r := t.split(store, child, key)
 	var lHash, rHash []byte
 	if len(lChildren) == 0 {
 		lHash = l
@@ -109,14 +110,6 @@ func (t *MerkleSearchTree) splitInto(
 		store, rHash = store.Put(rNode)
 	}
 	return store, lHash, rHash
-}
-
-func (t *MerkleSearchTree) split(
-	store NodeStore,
-	nodeHash []byte,
-	key Key,
-) (NodeStore, []byte, []byte) {
-	return t.splitInto(store, nodeHash, key)
 }
 
 func (t *MerkleSearchTree) leadingZeros(key Key) uint32 {
@@ -212,10 +205,12 @@ func (t *MerkleSearchTree) merge(
 	var level uint32
 	var lLow, rLow []byte = l, r
 	var lChildren, rChildren []Child = []Child{}, []Child{}
+	isLHigher := false
 	if lNode.level >= rNode.level {
 		lLow = lNode.low
 		lChildren = lNode.children
 		level = lNode.level
+		isLHigher = true
 	}
 	if lNode.level <= rNode.level {
 		rLow = rNode.low
@@ -224,7 +219,7 @@ func (t *MerkleSearchTree) merge(
 	}
 	lN, rN := uint(len(lChildren)), uint(len(rChildren))
 
-	var low []byte = nil
+	var low []byte
 	children := []Child{}
 
 	lCur, rCur := uint(0), uint(0)
@@ -244,7 +239,7 @@ func (t *MerkleSearchTree) merge(
 		} else if rCur == rN {
 			lChild := lNode.children[lCur]
 			children = append(children, Child{lChild.key, lChild.value, nil})
-			store, interNode, rLow = with.splitInto(store, rLow, lChild.key)
+			store, interNode, rLow = with.split(store, rLow, lChild.key)
 			store, nextNode = t.merge(with, store, lLow, interNode)
 			lLow = lChild.high
 			lCur++
@@ -253,7 +248,7 @@ func (t *MerkleSearchTree) merge(
 			rChild := rNode.children[rCur]
 			if lChild.key.Less(rChild.key) {
 				children = append(children, Child{lChild.key, lChild.value, nil})
-				store, interNode, rLow = with.splitInto(store, rLow, lChild.key)
+				store, interNode, rLow = with.split(store, rLow, lChild.key)
 				store, nextNode = t.merge(with, store, lLow, interNode)
 				lLow = lChild.high
 				lCur++
@@ -278,17 +273,18 @@ func (t *MerkleSearchTree) merge(
 		} else {
 			children[i-1].high = nextNode
 		}
-		if interNode != nil {
-			store = store.Remove(interNode)
-		}
 	}
 
 	if len(children) == 0 {
 		panic("If the number of children is zero here, it means a tree is misformed")
 	}
 
-	store = store.Remove(l)
-	store = store.Remove(r)
+	if isLHigher {
+		// In this specific case we want to clean up the left node from the store
+		// because the left tree was at a higher level and it will be replaced by
+		// the node we are creating below.
+		store = store.Remove(l)
+	}
 	return store.Put(&Node{
 		level:    level,
 		low:      low,
@@ -300,6 +296,7 @@ func (t *MerkleSearchTree) printInOrder(nodeHash []byte, height uint32) {
 	if nodeHash == nil {
 		return
 	}
+	fmt.Printf("%s\n", hex.EncodeToString(nodeHash))
 	n := t.store.Get(nodeHash)
 	t.printInOrder(n.low, height)
 	for _, child := range n.children {

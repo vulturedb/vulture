@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"log"
-	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -40,28 +38,18 @@ func (s *MSTServer) getTree() *mst.MerkleSearchTree {
 func (s *MSTServer) mergeTree(tree *mst.MerkleSearchTree) {
 	s.treeLock.Lock()
 	defer s.treeLock.Unlock()
-	fmt.Println("Left:")
-	s.tree.PrintInOrder()
-	fmt.Println("Right:")
-	tree.PrintInOrder()
 	newTree, err := s.tree.Merge(tree)
 	if err != nil {
 		panic(err)
 	}
-	oldStoreSize := s.tree.NodeStore().Size()
-	oldSize := s.tree.NumNodes()
-	rightStoreSize := tree.NodeStore().Size()
-	rightSize := tree.NumNodes()
-	newStoreSize := newTree.NodeStore().Size()
-	newSize := newTree.NumNodes()
 	log.Printf(
 		"Merging tree from (tree: %d, store: %d) and (tree: %d, store: %d) to (tree: %d, store: %d)",
-		oldSize,
-		oldStoreSize,
-		rightSize,
-		rightStoreSize,
-		newSize,
-		newStoreSize,
+		s.tree.NumNodes(),
+		s.tree.NodeStore().Size(),
+		tree.NumNodes(),
+		tree.NodeStore().Size(),
+		newTree.NumNodes(),
+		newTree.NodeStore().Size(),
 	)
 	s.tree = newTree
 }
@@ -217,7 +205,6 @@ func (s *MSTManagerServer) updateNodes(
 		store, hash = store.Put(node)
 		hashStrs = append(hashStrs, hex.EncodeToString(hash))
 	}
-	log.Printf("Added nodes with hashes: %s", strings.Join(hashStrs, ", "))
 	tree = tree.WithNodeStore(store)
 	round = antiEntropyDestRound{tree, round.rootHash}
 	s.antiEntropyDestRounds[roundUUID] = round
